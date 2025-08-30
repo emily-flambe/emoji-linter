@@ -6,9 +6,13 @@ Remove emojis from your codebase. Keep your code professional.
 
 ### CLI Tool
 
-Install globally:
+Clone and setup:
 ```bash
-npm install -g emoji-linter
+git clone https://github.com/emilycogsdill/emoji-linter.git
+cd emoji-linter
+npm install
+npm run build
+npm link  # Makes command available globally
 ```
 
 Check for emojis:
@@ -168,14 +172,24 @@ jobs:
 
 ## Installation
 
+This package is not yet published to npm. To use it:
+
+### Clone and Setup
+```bash
+git clone https://github.com/emilycogsdill/emoji-linter.git
+cd emoji-linter
+npm install
+npm run build
+```
+
 ### Global CLI
 ```bash
-npm install -g emoji-linter
+npm link  # Makes emoji-linter command available globally
 ```
 
 ### Local Development
 ```bash
-npm install --save-dev emoji-linter
+npm install --save-dev ./path/to/emoji-linter
 ```
 
 ### GitHub Action
