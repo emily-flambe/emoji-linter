@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emilycogsdill/emoji-linter@v1
+      - uses: emily-flambe/emoji-linter@v1
         with:
           mode: clean
 ```
@@ -60,7 +60,7 @@ jobs:
 ### Clean Mode (Default)
 Detects emojis in your codebase for cleanup:
 ```yaml
-- uses: emilycogsdill/emoji-linter@v1
+- uses: emily-flambe/emoji-linter@v1
   with:
     mode: clean
     path: src/
@@ -69,7 +69,7 @@ Detects emojis in your codebase for cleanup:
 ### Forbid Mode
 Fails if any emojis are found:
 ```yaml
-- uses: emilycogsdill/emoji-linter@v1
+- uses: emily-flambe/emoji-linter@v1
   with:
     mode: forbid
 ```
@@ -77,7 +77,7 @@ Fails if any emojis are found:
 ### Require Mode
 Fails if NO emojis are found (useful for commit messages):
 ```yaml
-- uses: emilycogsdill/emoji-linter@v1
+- uses: emily-flambe/emoji-linter@v1
   with:
     mode: require
 ```
@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emilycogsdill/emoji-linter@v1
+      - uses: emily-flambe/emoji-linter@v1
         with:
           mode: forbid
           comment-pr: true
@@ -180,7 +180,7 @@ npm install --save-dev emoji-linter
 
 ### GitHub Action
 ```yaml
-uses: emilycogsdill/emoji-linter@v1
+uses: emily-flambe/emoji-linter@v1
 ```
 
 ## License
