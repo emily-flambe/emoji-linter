@@ -183,46 +183,6 @@ describe('GitHubUtils', () => {
       expect(report).toContain('- Line 3, Column 15: ❤️ (unicode)');
     });
 
-    it('should format report for require mode with no emojis', () => {
-      const results = [];
-      const summary = {
-        totalFiles: 3,
-        filesWithEmojis: 0,
-        totalEmojis: 0,
-        errors: []
-      };
-      const mode = 'require';
-
-      const report = GitHubUtils.formatEmojiReport(results, summary, mode);
-
-      expect(report).toContain('**Status:** ❌ No emojis found');
-      expect(report).toContain('**Mode:** require');
-      expect(report).toContain('Emojis are required but none were found.');
-    });
-
-    it('should format report for require mode with emojis found', () => {
-      const results = [
-        {
-          filePath: './src/test.js',
-          emojis: [
-            { emoji: '✨', type: 'unicode', lineNumber: 1, columnNumber: 1 }
-          ]
-        }
-      ];
-      const summary = {
-        totalFiles: 3,
-        filesWithEmojis: 1,
-        totalEmojis: 1,
-        errors: []
-      };
-      const mode = 'require';
-
-      const report = GitHubUtils.formatEmojiReport(results, summary, mode);
-
-      expect(report).toContain('**Status:** ✅ Emojis found');
-      expect(report).toContain('**Mode:** require');
-      expect(report).toContain('Great! Found the required emojis.');
-    });
 
     it('should include error information when present', () => {
       const results = [];

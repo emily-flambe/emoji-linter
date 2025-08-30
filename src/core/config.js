@@ -146,7 +146,7 @@ class Config {
    * @returns {string|null} Path to config file or null if not found
    */
   findConfigFile() {
-    const configFiles = ['.emoji-linter.json', 'emoji-linter.config.json'];
+    const configFiles = ['.emoji-linter-config.json', '.emoji-linter.json', 'emoji-linter.config.json'];
     
     for (const filename of configFiles) {
       const filePath = path.join(process.cwd(), filename);

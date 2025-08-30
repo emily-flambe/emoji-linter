@@ -12,13 +12,13 @@ inputs:
     required: false
     default: '.'
   mode:
-    description: 'Validation mode: "clean" (detect emojis for cleanup), "require" (ensure emojis are present), "forbid" (ensure no emojis exist)'
+    description: 'Validation mode: "clean" (detect emojis for cleanup), "forbid" (ensure no emojis exist)'
     required: false
     default: 'clean'
   config-file:
     description: 'Path to emoji-linter configuration file'
     required: false
-    default: '.emoji-linter.json'
+    default: '.emoji-linter-config.json'
   comment-pr:
     description: 'Whether to post a comment on pull requests with results'
     required: false

@@ -91,18 +91,18 @@ describe('GitHub Action', () => {
 
       // Mock the validation to throw the expected error
       GitHubUtils.validateInputs.mockImplementation(() => {
-        throw new Error('Invalid mode: invalid-mode. Valid modes: clean, require, forbid');
+        throw new Error('Invalid mode: invalid-mode. Valid modes: clean, forbid');
       });
 
       await run();
 
       expect(mockSetFailed).toHaveBeenCalledWith(
-        expect.stringContaining('Invalid mode: invalid-mode. Valid modes: clean, require, forbid')
+        expect.stringContaining('Invalid mode: invalid-mode. Valid modes: clean, forbid')
       );
     });
 
     it('should accept valid mode values', async () => {
-      const validModes = ['clean', 'require', 'forbid'];
+      const validModes = ['clean', 'forbid'];
       
       for (const mode of validModes) {
         jest.clearAllMocks();
@@ -214,48 +214,6 @@ describe('GitHub Action', () => {
       expect(mockSetOutput).toHaveBeenCalledWith('emoji-count', '0');
       expect(mockSetOutput).toHaveBeenCalledWith('files-with-emojis', '0');
       expect(mockSetOutput).toHaveBeenCalledWith('total-files', '1');
-      expect(mockSetFailed).not.toHaveBeenCalled();
-    });
-
-    it('should handle require mode when emojis are found', async () => {
-      mockGetInput.mockImplementation((name) => {
-        const inputs = {
-          'path': './src',
-          'mode': 'require',
-          'config-file': '.emoji-linter.json',
-          'comment-pr': 'false',
-          'fail-on-error': 'true'
-        };
-        return inputs[name] || '';
-      });
-
-      const mockResults = {
-        success: true,
-        results: [
-          {
-            filePath: './src/test.js',
-            emojis: [
-              { emoji: '👍', type: 'unicode', lineNumber: 1, columnNumber: 5 }
-            ],
-            size: 100
-          }
-        ],
-        summary: {
-          totalFiles: 1,
-          filesWithEmojis: 1,
-          totalEmojis: 1,
-          errors: []
-        }
-      };
-
-      CLI.mockImplementation(() => ({
-        runAndGetResults: jest.fn().mockResolvedValue(mockResults)
-      }));
-
-      await run();
-
-      expect(mockSetOutput).toHaveBeenCalledWith('has-emojis', 'true');
-      expect(mockSetOutput).toHaveBeenCalledWith('emoji-count', '1');
       expect(mockSetFailed).not.toHaveBeenCalled();
     });
 

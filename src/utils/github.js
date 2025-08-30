@@ -87,15 +87,6 @@ class GitHubUtils {
         message = 'Found emojis that should be cleaned up.';
       }
       break;
-    case 'require':
-      statusIcon = hasEmojis ? '✅' : '❌';
-      status = hasEmojis ? 'Emojis found' : 'No emojis found';
-      if (hasEmojis) {
-        message = 'Great! Found the required emojis.';
-      } else {
-        message = 'Emojis are required but none were found.';
-      }
-      break;
     case 'forbid':
       statusIcon = hasEmojis ? '❌' : '✅';
       status = hasEmojis ? 'Emojis found' : 'No emojis found';
@@ -170,7 +161,7 @@ class GitHubUtils {
     const { mode, path, configFile } = inputs;
 
     // Validate mode
-    const validModes = ['clean', 'require', 'forbid'];
+    const validModes = ['clean', 'forbid'];
     if (!validModes.includes(mode)) {
       throw new Error(`Invalid mode: ${mode}. Valid modes: ${validModes.join(', ')}`);
     }

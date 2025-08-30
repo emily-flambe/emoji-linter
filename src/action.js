@@ -17,7 +17,7 @@ async function run() {
     const inputs = {
       path: core.getInput('path') || '.',
       mode: core.getInput('mode') || 'clean',
-      configFile: core.getInput('config-file') || '.emoji-linter.json',
+      configFile: core.getInput('config-file') || '.emoji-linter-config.json',
       commentPR: core.getInput('comment-pr') === 'true',
       failOnError: core.getInput('fail-on-error') === 'true'
     };
@@ -102,12 +102,6 @@ async function run() {
           failureMessage = `Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files. Mode: clean - emojis should be removed.`;
         }
         break;
-      case 'require':
-        if (!hasEmojis) {
-          shouldFail = true;
-          failureMessage = 'No emojis found in any files. Mode: require - emojis are required.';
-        }
-        break;
       case 'forbid':
         if (hasEmojis) {
           shouldFail = true;
@@ -129,13 +123,6 @@ async function run() {
         core.warning(`Found ${results.summary.totalEmojis} emojis that could be cleaned up`);
       } else {
         core.info('No emojis found - codebase is clean');
-      }
-      break;
-    case 'require':
-      if (hasEmojis) {
-        core.info('Required emojis found - validation passed');
-      } else {
-        core.warning('No emojis found but they are required');
       }
       break;
     case 'forbid':

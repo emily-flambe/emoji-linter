@@ -78,19 +78,12 @@ Fails if any emojis are found:
     mode: forbid
 ```
 
-### Require Mode
-Fails if NO emojis are found (useful for commit messages):
-```yaml
-- uses: emily-flambe/emoji-linter@v1
-  with:
-    mode: require
-```
 
 ### Action Inputs
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `mode` | clean, forbid, or require | `clean` |
+| `mode` | clean or forbid | `clean` |
 | `path` | Directory to scan | `.` |
 | `config-file` | Config file path | `.emoji-linter.json` |
 | `comment-pr` | Post results to PR | `false` |
@@ -108,7 +101,8 @@ Create `.emoji-linter.json` in your project root:
       "docs/**",
       "**/node_modules/**"
     ],
-    "emojis": []
+    "emojis": ["✅", "🚀", "⚠️"],
+    "patterns": ["console.log.*🚀"]
   },
   "detection": {
     "unicode": true,
@@ -116,6 +110,16 @@ Create `.emoji-linter.json` in your project root:
   }
 }
 ```
+
+### Configuration Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `ignore.files` | File/directory patterns to skip | `["**/*.md", "docs/**"]` |
+| `ignore.emojis` | Specific emojis to whitelist (never lint) | `["✅", "🚀", ":rocket:"]` |
+| `ignore.patterns` | Regex patterns to ignore | `["console.log.*🚀"]` |
+| `detection.unicode` | Detect Unicode emojis (🚀) | `true` |
+| `detection.shortcodes` | Detect shortcode emojis (:rocket:) | `true` |
 
 ## Ignore Comments
 
