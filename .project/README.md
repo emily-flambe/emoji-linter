@@ -1,42 +1,61 @@
 # Project Steering Document
 
 ## Mission Statement
-Create a robust, reliable GitHub Action that validates emoji usage in commits, pull requests, and branches, helping teams maintain consistent communication standards in their development workflow.
+Create a robust, dual-purpose emoji linting tool that:
+1. **CLI Linter**: Scans codebases to detect and optionally remove emojis from source code (like python black)
+2. **GitHub Action**: Validates emoji usage in commits, pull requests, and branches for CI/CD integration
+
+Helping teams maintain professional, emoji-free codebases while supporting flexible workflow validation.
 
 ## Project Goals
 
 ### Primary Goals
-1. **Reliable Emoji Detection**: Accurately detect all forms of emojis (Unicode, sequences, shortcodes)
-2. **Flexible Configuration**: Support multiple validation modes and configurations
-3. **Clear Feedback**: Provide actionable error messages and guidance
-4. **Fast Execution**: Minimize CI/CD pipeline impact
-5. **Easy Integration**: Simple to add to any GitHub workflow
+1. **Dual-Purpose Architecture**: CLI tool for codebase linting + GitHub Action for workflow validation
+2. **Comprehensive Emoji Detection**: Accurately detect all forms of emojis (Unicode, sequences, shortcodes, skin tones)
+3. **Professional Code Cleanup**: Remove emojis from source code with ignore mechanisms
+4. **Flexible Configuration**: Config file system for ignoring specific emojis, files, and directories
+5. **Inline Ignore Support**: Comment-based ignore system (file-level and line-level)
+6. **Fast Execution**: Efficient scanning and minimal CI/CD pipeline impact
+7. **Easy Integration**: Simple CLI usage and GitHub workflow integration
 
 ### Success Metrics
-- Zero false positives in emoji detection
-- < 5 second execution time for typical usage
+- Zero false positives in emoji detection across all Unicode ranges
+- < 2 seconds execution time for typical codebase scanning (1000+ files)
+- < 5 seconds execution time for GitHub Action usage
 - 95%+ test coverage on core functionality
-- GitHub Marketplace publication
-- Active usage in 100+ repositories
+- npm package publication + GitHub Marketplace listing
+- CLI tool adoption: 500+ downloads/month
+- GitHub Action usage: 100+ repositories
 
 ## Technical Priorities
 
 ### Must Have (P0)
-- [x] Detect Unicode emojis
-- [x] Detect shortcode emojis
-- [x] Require/Forbid/Count modes
-- [x] PR title validation
-- [x] Commit message validation
-- [x] Clear error messages
-- [x] GitHub Action compatibility
+- [ ] **CLI Tool Core**: Executable linter with file system scanning
+- [ ] **Comprehensive Detection**: Unicode emojis, sequences, shortcodes, skin tones
+- [ ] **Cleanup Modes**: Check-only, fix-in-place, write-to-stdout
+- [ ] **Configuration System**: `.emoji-linter.json` config file support
+- [ ] **File Ignoring**: Glob patterns for ignoring files/directories
+- [ ] **Inline Ignoring**: Comment-based ignore system
+  - `// emoji-linter-ignore-file` (top of file)
+  - `// emoji-linter-ignore-line` or `// emoji-linter-ignore-next-line`
+- [ ] **GitHub Action Mode**: Integration wrapper for CI/CD
+- [ ] **Clear Error Messages**: File locations, line numbers, emoji details
+- [ ] **Performance**: Fast scanning of large codebases
 
 ### Should Have (P1)
-- [ ] Position validation (start/end)
-- [ ] Allowed/forbidden emoji lists
-- [ ] PR comment feedback
-- [ ] Branch name validation
-- [ ] File path validation
-- [ ] Detailed action outputs
+- [ ] **Advanced CLI Features**:
+  - Diff mode (show what would change)
+  - Statistics (emoji count by type)
+  - Multiple output formats (JSON, table, minimal)
+- [ ] **Enhanced Configuration**:
+  - Individual emoji allow/deny lists
+  - File type-specific rules
+  - Custom regex patterns
+- [ ] **GitHub Action Enhancements**:
+  - PR comment feedback with diff
+  - Branch name validation
+  - Detailed action outputs
+- [ ] **IDE Integration**: VS Code extension support
 
 ### Nice to Have (P2)
 - [ ] Emoji statistics
@@ -47,26 +66,27 @@ Create a robust, reliable GitHub Action that validates emoji usage in commits, p
 
 ## Development Phases
 
-### Phase 1: Foundation (Current)
+### Phase 1: CLI Foundation (Current)
 - Set up project structure ✓
-- Create core linting logic
-- Implement basic modes
-- Add unit tests
-- Bundle with ncc
+- **CLI Architecture**: Executable, argument parsing, file scanning
+- **Core Detection Engine**: Comprehensive emoji detection
+- **Configuration System**: Config file parsing, ignore mechanisms
+- **Cleanup Logic**: In-place editing, backup options
+- **Basic Testing**: Core functionality test suite
 
-### Phase 2: Enhancement
-- Add position validation
-- Implement emoji whitelisting/blacklisting
-- Add PR comment functionality
-- Expand test coverage
-- Performance optimization
+### Phase 2: GitHub Action Integration
+- **Action Wrapper**: GitHub Action compatibility layer
+- **CI/CD Features**: Validation modes, PR comments
+- **Advanced Configuration**: Allow/deny lists, custom patterns
+- **Performance Optimization**: Large codebase handling
+- **Comprehensive Testing**: CLI + Action integration tests
 
-### Phase 3: Polish
-- Comprehensive documentation
-- GitHub Marketplace preparation
-- Example workflows
-- Video tutorials
-- Community templates
+### Phase 3: Distribution & Polish
+- **npm Package**: CLI tool distribution
+- **GitHub Marketplace**: Action publication
+- **Documentation**: CLI usage guide, Action examples
+- **IDE Integration**: VS Code extension foundation
+- **Performance Benchmarking**: Large repository testing
 
 ### Phase 4: Growth
 - Feature requests from users
