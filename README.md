@@ -85,13 +85,13 @@ Fails if any emojis are found:
 |-------|-------------|---------|
 | `mode` | clean or forbid | `clean` |
 | `path` | Directory to scan | `.` |
-| `config-file` | Config file path | `.emoji-linter.json` |
+| `config-file` | Config file path | `.emoji-linter.config.json` |
 | `comment-pr` | Post results to PR | `false` |
 | `fail-on-error` | Fail action on violations | `true` |
 
 ## Configuration
 
-Create `.emoji-linter.json` in your project root:
+Create `.emoji-linter.config.json` in your project root. See the [comprehensive example](.emoji-linter.config.json) in this repository:
 
 ```json
 {
@@ -99,7 +99,13 @@ Create `.emoji-linter.json` in your project root:
     "files": [
       "**/*.md",
       "docs/**",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      ".git/**",
+      "dist/**",
+      "build/**",
+      "coverage/**",
+      "**/*.min.js",
+      "**/*.map"
     ],
     "emojis": ["✅", "🚀", "⚠️"],
     "patterns": ["console.log.*🚀"]

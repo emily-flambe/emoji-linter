@@ -152,10 +152,10 @@ describe('CLI Class', () => {
     });
 
     test('should parse config file flag', () => {
-      const args = ['check', 'file.js', '--config', '.emoji-linter.json'];
+      const args = ['check', 'file.js', '--config', '.emoji-linter-config.json'];
       const parsed = cli.parseArguments(args);
       
-      expect(parsed.options.config).toBe('.emoji-linter.json');
+      expect(parsed.options.config).toBe('.emoji-linter-config.json');
     });
 
     test('should parse verbose flag', () => {

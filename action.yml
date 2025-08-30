@@ -18,7 +18,7 @@ inputs:
   config-file:
     description: 'Path to emoji-linter configuration file'
     required: false
-    default: '.emoji-linter-config.json'
+    default: '.emoji-linter.config.json'
   comment-pr:
     description: 'Whether to post a comment on pull requests with results'
     required: false

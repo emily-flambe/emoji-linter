@@ -10,10 +10,17 @@
       "build/**",
       "coverage/**",
       "**/*.min.js",
-      "**/*.map"
+      "**/*.map",
+      ".temp/**",
+      ".github/**",
+      "**/.venv/**",
+      "**/venv/**",
+      "**/*.py[co]",
+      "tests/**",
+      ".project/**"
     ],
-    "emojis": [],
-    "patterns": []
+    "emojis": ["🚨", "⚠️"],
+    "patterns": ["console.log.*🚀"]
   },
   "detection": {
     "unicode": true,

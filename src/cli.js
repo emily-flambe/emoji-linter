@@ -16,6 +16,7 @@ const {
   ErrorHandler 
 } = require('./utils/errors');
 const { OutputFormatter, OutputUtils } = require('./utils/output');
+const { isDirectory } = require('./utils/files');
 
 /**
  * Main CLI class
@@ -235,6 +236,37 @@ class CLI {
   }
 
   /**
+   * Expand paths that are directories into individual file paths
+   * @param {Array} paths - Array of file and directory paths
+   * @returns {Promise<Array>} Array of individual file paths
+   */
+  async expandPaths(paths) {
+    const expandedFiles = [];
+    
+    for (const inputPath of paths) {
+      try {
+        if (await isDirectory(inputPath)) {
+          // Use scanDirectory to get all files in the directory
+          for await (const scanResult of this.scanner.scanDirectory(inputPath)) {
+            if (!scanResult.error) {
+              expandedFiles.push(scanResult.filePath);
+            }
+          }
+        } else {
+          // It's a file, add it directly
+          expandedFiles.push(inputPath);
+        }
+      } catch (error) {
+        // If we can't determine if it's a directory, treat it as a file
+        // This will let the scanner handle the error appropriately
+        expandedFiles.push(inputPath);
+      }
+    }
+    
+    return expandedFiles;
+  }
+
+  /**
    * Check mode - detect emojis in files and report results
    * @param {Array} files - Files to check
    * @param {Object} options - Command options
@@ -252,8 +284,11 @@ class CLI {
     const startTime = Date.now();
 
     try {
+      // Expand directory paths into individual file paths
+      const expandedFiles = await this.expandPaths(files);
+      
       // Process files
-      for await (const scanResult of this.scanner.scanFiles(files)) {
+      for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         summary.totalFiles++;
 
         if (scanResult.error) {
@@ -379,7 +414,10 @@ class CLI {
     let totalEmojisRemoved = 0;
 
     try {
-      for await (const scanResult of this.scanner.scanFiles(files)) {
+      // Expand directory paths into individual file paths
+      const expandedFiles = await this.expandPaths(files);
+      
+      for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         if (scanResult.error) {
           if (!options.quiet) {
             console.error(ErrorHandler.formatError(scanResult.error));
@@ -490,7 +528,10 @@ class CLI {
     const diffs = [];
 
     try {
-      for await (const scanResult of this.scanner.scanFiles(files)) {
+      // Expand directory paths into individual file paths
+      const expandedFiles = await this.expandPaths(files);
+      
+      for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         if (scanResult.error) {
           if (!options.quiet) {
             console.error(ErrorHandler.formatError(scanResult.error));
@@ -578,7 +619,10 @@ class CLI {
     const results = [];
 
     try {
-      for await (const scanResult of this.scanner.scanFiles(files)) {
+      // Expand directory paths into individual file paths
+      const expandedFiles = await this.expandPaths(files);
+      
+      for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         if (scanResult.error) {
           if (!options.quiet) {
             console.error(ErrorHandler.formatError(scanResult.error));
@@ -674,7 +718,8 @@ Examples:
   emoji-linter check --config custom.json   # Use custom config file
 
 Configuration:
-  Place a .emoji-linter.json file in your project root to customize behavior.
+  Create a .emoji-linter.config.json file to customize behavior. 
+  By default, all files are scanned - use ignore patterns for common directories.
   
 Exit Codes:
   0 - Success (no emojis found in check mode)
@@ -828,8 +873,11 @@ Exit Codes:
     };
 
     try {
+      // Expand directory paths into individual file paths
+      const expandedFiles = await this.expandPaths(files);
+      
       // Process files
-      for await (const scanResult of this.scanner.scanFiles(files)) {
+      for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         summary.totalFiles++;
 
         if (scanResult.error) {

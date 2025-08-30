@@ -17,7 +17,7 @@ async function run() {
     const inputs = {
       path: core.getInput('path') || '.',
       mode: core.getInput('mode') || 'clean',
-      configFile: core.getInput('config-file') || '.emoji-linter-config.json',
+      configFile: core.getInput('config-file') || '.emoji-linter.config.json',
       commentPR: core.getInput('comment-pr') === 'true',
       failOnError: core.getInput('fail-on-error') === 'true'
     };

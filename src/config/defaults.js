@@ -4,18 +4,7 @@
 
 const DEFAULT_CONFIG = {
   ignore: {
-    files: [
-      '**/*.md',
-      'docs/**',
-      'test/fixtures/**',
-      '**/node_modules/**',
-      '.git/**',
-      'dist/**',
-      'build/**',
-      'coverage/**',
-      '**/*.min.js',
-      '**/*.map'
-    ],
+    files: [],
     emojis: [],
     patterns: []
   },
