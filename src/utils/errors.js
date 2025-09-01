@@ -1,97 +1,30 @@
 /**
- * CLI Error Classes for emoji-linter
- * Provides comprehensive error handling for CLI operations
+ * Simplified error handling for emoji-linter CLI
+ * Replaces 367-line complex hierarchy with focused, simple approach
  */
 
 /* eslint-disable no-console */
 
 /**
- * Base CLI error class
+ * File operation error - the only custom error we actually need
+ * Handles system errors like ENOENT, EACCES, etc.
  */
-class CLIError extends Error {
-  /**
-   * Creates a new CLIError
-   * @param {string} message - Error message
-   * @param {number} [exitCode=1] - Process exit code
-   */
-  constructor(message, exitCode = 1) {
-    super(message);
-    this.name = 'CLIError';
-    this.exitCode = exitCode;
-  }
-
-  /**
-   * Returns formatted error message for CLI display
-   * @returns {string} Formatted error message
-   */
-  toDisplayString() {
-    return `Error: ${this.message}`;
-  }
-}
-
-/**
- * Validation error for invalid CLI arguments or options
- */
-class ValidationError extends CLIError {
-  /**
-   * Creates a new ValidationError
-   * @param {string} message - Error message
-   * @param {string} [parameter] - Parameter name that caused the error
-   */
-  constructor(message, parameter = null) {
-    super(message, 1);
-    this.name = 'ValidationError';
-    this.parameter = parameter;
-  }
-
-  /**
-   * Returns formatted error message for CLI display
-   * @returns {string} Formatted error message
-   */
-  toDisplayString() {
-    const base = `Validation Error: ${this.message}`;
-    return this.parameter ? `${base} (parameter: ${this.parameter})` : base;
-  }
-}
-
-/**
- * File operation error for file system issues
- */
-class FileError extends CLIError {
+class FileError extends Error {
   /**
    * Creates a new FileError
    * @param {string} message - Error message
    * @param {string} filePath - Path to the file that caused the error
    * @param {string} [code] - System error code (e.g., 'ENOENT', 'EACCES')
-   * @param {number} [exitCode=1] - Process exit code
    */
-  constructor(message, filePath, code = null, exitCode = 1) {
-    super(message, exitCode);
+  constructor(message, filePath, code = null) {
+    super(message);
     this.name = 'FileError';
     this.filePath = filePath;
     this.code = code;
   }
 
   /**
-   * Returns formatted error message for CLI display
-   * @returns {string} Formatted error message
-   */
-  toDisplayString() {
-    let display = `File Error: ${this.message}`;
-    
-    if (this.filePath) {
-      display += ` (${this.filePath})`;
-    }
-    
-    if (this.code) {
-      display += ` [${this.code}]`;
-    }
-    
-    return display;
-  }
-
-  /**
-   * Returns user-friendly error message based on error code
+   * Get user-friendly error message
    * @returns {string} User-friendly message
    */
   getFriendlyMessage() {
@@ -112,256 +45,137 @@ class FileError extends CLIError {
     case 'EROFS':
       return `Read-only file system: ${this.filePath}`;
     default:
-      return this.toDisplayString();
+      return `File error: ${this.message} (${this.filePath})`;
     }
   }
 }
 
 /**
- * Configuration error for config file issues
+ * Simple error formatting - handles colors if terminal supports them
+ * @param {Error} error - The error to format
+ * @returns {string} Formatted error message
  */
-class ConfigError extends CLIError {
-  /**
-   * Creates a new ConfigError
-   * @param {string} message - Error message
-   * @param {string} [configPath] - Path to the config file
-   */
-  constructor(message, configPath = null) {
-    super(message, 1);
-    this.name = 'ConfigError';
-    this.configPath = configPath;
+function formatError(error) {
+  const useColors = shouldUseColors();
+  const red = useColors ? '\x1b[31m' : '';
+  const reset = useColors ? '\x1b[0m' : '';
+  
+  let message;
+  if (error instanceof FileError) {
+    message = error.getFriendlyMessage();
+  } else {
+    message = `Error: ${error.message}`;
   }
-
-  /**
-   * Returns formatted error message for CLI display
-   * @returns {string} Formatted error message
-   */
-  toDisplayString() {
-    let display = `Configuration Error: ${this.message}`;
-    
-    if (this.configPath) {
-      display += ` (${this.configPath})`;
-    }
-    
-    return display;
-  }
+  
+  return `${red}${message}${reset}`;
 }
 
 /**
- * Output formatting error
+ * Simple warning formatting
+ * @param {string} message - Warning message
+ * @returns {string} Formatted warning message
  */
-class OutputError extends CLIError {
-  /**
-   * Creates a new OutputError
-   * @param {string} message - Error message
-   * @param {string} [format] - Output format that caused the error
-   */
-  constructor(message, format = null) {
-    super(message, 1);
-    this.name = 'OutputError';
-    this.format = format;
-  }
-
-  /**
-   * Returns formatted error message for CLI display
-   * @returns {string} Formatted error message
-   */
-  toDisplayString() {
-    let display = `Output Error: ${this.message}`;
-    
-    if (this.format) {
-      display += ` (format: ${this.format})`;
-    }
-    
-    return display;
-  }
+function formatWarning(message) {
+  const useColors = shouldUseColors();
+  const yellow = useColors ? '\x1b[33m' : '';
+  const reset = useColors ? '\x1b[0m' : '';
+  return `${yellow}Warning: ${message}${reset}`;
 }
 
 /**
- * Processing error for emoji detection/processing issues
+ * Simple success formatting
+ * @param {string} message - Success message
+ * @returns {string} Formatted success message
  */
-class ProcessingError extends CLIError {
-  /**
-   * Creates a new ProcessingError
-   * @param {string} message - Error message
-   * @param {string} [filePath] - File being processed when error occurred
-   * @param {number} [lineNumber] - Line number where error occurred
-   */
-  constructor(message, filePath = null, lineNumber = null) {
-    super(message, 1);
-    this.name = 'ProcessingError';
-    this.filePath = filePath;
-    this.lineNumber = lineNumber;
-  }
-
-  /**
-   * Returns formatted error message for CLI display
-   * @returns {string} Formatted error message
-   */
-  toDisplayString() {
-    let display = `Processing Error: ${this.message}`;
-    
-    if (this.filePath) {
-      display += ` (${this.filePath}`;
-      
-      if (this.lineNumber) {
-        display += `:${this.lineNumber}`;
-      }
-      
-      display += ')';
-    }
-    
-    return display;
-  }
+function formatSuccess(message) {
+  const useColors = shouldUseColors();
+  const green = useColors ? '\x1b[32m' : '';
+  const reset = useColors ? '\x1b[0m' : '';
+  return `${green}${message}${reset}`;
 }
 
 /**
- * Error handler utility functions
+ * Simple info formatting
+ * @param {string} message - Info message
+ * @returns {string} Formatted info message
  */
-class ErrorHandler {
-  /**
-   * Format error for console display with colors (if supported)
-   * @param {Error} error - The error to format
-   * @param {boolean} [useColors=true] - Whether to use color formatting
-   * @returns {string} Formatted error message
-   */
-  static formatError(error, useColors = true) {
-    if (error instanceof CLIError) {
-      const message = error.toDisplayString();
-      return useColors ? `\x1b[31m${message}\x1b[0m` : message;
+function formatInfo(message) {
+  const useColors = shouldUseColors();
+  const cyan = useColors ? '\x1b[36m' : '';
+  const reset = useColors ? '\x1b[0m' : '';
+  return `${cyan}${message}${reset}`;
+}
+
+/**
+ * Handle error and exit
+ * @param {Error} error - The error to handle
+ * @param {boolean} [verbose=false] - Whether to show stack trace
+ */
+function handleError(error, verbose = false) {
+  console.error(formatError(error));
+  
+  if (verbose && error.stack) {
+    console.error('\nStack trace:');
+    console.error(error.stack);
+  }
+  
+  // Helpful tips for common errors
+  if (error instanceof FileError) {
+    if (error.code === 'ENOENT') {
+      console.error(formatInfo('\nTip: Check if the file path is correct and the file exists.'));
+    } else if (error.code === 'EACCES') {
+      console.error(formatInfo('\nTip: Check file permissions or run with appropriate privileges.'));
     }
-    
-    const message = `Error: ${error.message}`;
-    return useColors ? `\x1b[31m${message}\x1b[0m` : message;
+  } else if (error.message.includes('validation') || error.message.includes('invalid')) {
+    console.error(formatInfo('\nRun with --help to see usage instructions.'));
+  } else if (error.message.includes('config')) {
+    console.error(formatInfo('\nTip: Check your configuration file syntax and structure.'));
   }
+  
+  process.exit(1);
+}
 
-  /**
-   * Format warning for console display
-   * @param {string} message - Warning message
-   * @param {boolean} [useColors=true] - Whether to use color formatting
-   * @returns {string} Formatted warning message
-   */
-  static formatWarning(message, useColors = true) {
-    const warning = `Warning: ${message}`;
-    return useColors ? `\x1b[33m${warning}\x1b[0m` : warning;
+/**
+ * Create FileError from Node.js system error
+ * @param {Error} systemError - Node.js system error
+ * @param {string} [filePath] - File path context
+ * @returns {FileError|Error} Appropriate error
+ */
+function fromSystemError(systemError, filePath = null) {
+  const { code, message } = systemError;
+  
+  const systemCodes = ['ENOENT', 'EACCES', 'EISDIR', 'ENOTDIR', 'EMFILE', 'ENFILE', 'ENOSPC', 'EROFS'];
+  if (systemCodes.includes(code)) {
+    return new FileError(message, filePath, code);
   }
+  
+  return new Error(`System error: ${message} ${code ? `(${code})` : ''}`.trim());
+}
 
-  /**
-   * Format success message for console display
-   * @param {string} message - Success message
-   * @param {boolean} [useColors=true] - Whether to use color formatting
-   * @returns {string} Formatted success message
-   */
-  static formatSuccess(message, useColors = true) {
-    return useColors ? `\x1b[32m${message}\x1b[0m` : message;
+/**
+ * Check if colors should be used in terminal
+ * @returns {boolean} True if colors should be used
+ */
+function shouldUseColors() {
+  // Check environment variables
+  if (process.env.NO_COLOR) {
+    return false;
   }
-
-  /**
-   * Format info message for console display
-   * @param {string} message - Info message
-   * @param {boolean} [useColors=true] - Whether to use color formatting
-   * @returns {string} Formatted info message
-   */
-  static formatInfo(message, useColors = true) {
-    return useColors ? `\x1b[36m${message}\x1b[0m` : message;
+  
+  if (process.env.FORCE_COLOR) {
+    return true;
   }
-
-  /**
-   * Handle CLI error and exit process
-   * @param {Error} error - The error to handle
-   * @param {boolean} [verbose=false] - Whether to show stack trace
-   * @param {boolean} [useColors=true] - Whether to use color formatting
-   */
-  static handleError(error, verbose = false, useColors = true) {
-    const formatted = this.formatError(error, useColors);
-    console.error(formatted);
-    
-    if (verbose && error.stack) {
-      console.error('\nStack trace:');
-      console.error(error.stack);
-    }
-    
-    // Provide helpful suggestions for common errors
-    if (error instanceof FileError && error.code === 'ENOENT') {
-      console.error(this.formatInfo('\nTip: Check if the file path is correct and the file exists.', useColors));
-    } else if (error instanceof FileError && error.code === 'EACCES') {
-      console.error(this.formatInfo('\nTip: Check file permissions or run with appropriate privileges.', useColors));
-    } else if (error instanceof ValidationError) {
-      console.error(this.formatInfo('\nRun with --help to see usage instructions.', useColors));
-    } else if (error instanceof ConfigError) {
-      console.error(this.formatInfo('\nTip: Check your configuration file syntax and structure.', useColors));
-    }
-    
-    const exitCode = error instanceof CLIError ? error.exitCode : 1;
-    process.exit(exitCode);
-  }
-
-  /**
-   * Create error from Node.js system error
-   * @param {Error} systemError - Node.js system error
-   * @param {string} [filePath] - File path context
-   * @returns {CLIError} Appropriate CLI error
-   */
-  static fromSystemError(systemError, filePath = null) {
-    const { code, message } = systemError;
-    
-    switch (code) {
-    case 'ENOENT':
-    case 'EACCES':
-    case 'EISDIR':
-    case 'ENOTDIR':
-    case 'EMFILE':
-    case 'ENFILE':
-    case 'ENOSPC':
-    case 'EROFS':
-      return new FileError(message, filePath, code);
-      
-    default:
-      return new CLIError(`System error: ${message} ${code ? `(${code})` : ''}`.trim());
-    }
-  }
-
-  /**
-   * Wrap async function with error handling
-   * @param {Function} fn - Async function to wrap
-   * @param {boolean} [verbose=false] - Whether to show verbose errors
-   * @returns {Function} Wrapped function
-   */
-  static wrapAsync(fn, verbose = false) {
-    return async (...args) => {
-      try {
-        return await fn(...args);
-      } catch (error) {
-        this.handleError(error, verbose);
-      }
-    };
-  }
-
-  /**
-   * Check if colors should be used in terminal
-   * @returns {boolean} True if colors should be used
-   */
-  static shouldUseColors() {
-    // Check common environment variables for color support
-    if (process.env.NO_COLOR) {
-      return false;
-    }
-    
-    if (process.env.FORCE_COLOR) {
-      return true;
-    }
-    
-    // Check if terminal supports colors
-    return process.stdout.isTTY && process.stdout.hasColors && process.stdout.hasColors();
-  }
+  
+  // Check if terminal supports colors
+  return process.stdout.isTTY;
 }
 
 module.exports = {
-  CLIError,
-  ValidationError,
   FileError,
-  ConfigError,
-  OutputError,
-  ProcessingError,
-  ErrorHandler
+  formatError,
+  formatWarning,
+  formatSuccess,
+  formatInfo,
+  handleError,
+  fromSystemError
 };

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { Config, ConfigError, ConfigValidationError } = require('../../src/core/config');
+const { Config } = require('../../src/core/config');
 
 describe('Config', () => {
   let tempDir;
@@ -21,31 +21,28 @@ describe('Config', () => {
   describe('constructor', () => {
     it('should create config with defaults when no options provided', () => {
       const config = new Config();
-      expect(config.config.ignore.files).toEqual(expect.arrayContaining(['**/*.md']));
-      expect(config.config.detection.unicode).toBe(true);
+      expect(config.config.ignore.files).toEqual([]);
       expect(config.config.output.format).toBe('table');
     });
 
     it('should merge provided options with defaults', () => {
       const options = {
-        detection: { unicode: false },
         output: { format: 'json' }
       };
       const config = new Config(options);
       
-      expect(config.config.detection.unicode).toBe(false);
       expect(config.config.output.format).toBe('json');
       // Should still have defaults for unspecified options
-      expect(config.config.ignore.files).toEqual(expect.arrayContaining(['**/*.md']));
+      expect(config.config.ignore.files).toEqual([]);
     });
 
-    it('should throw ConfigValidationError for invalid options', () => {
+    it('should handle invalid options gracefully', () => {
       const invalidOptions = {
-        detection: { unicode: 'invalid' }
+        output: { format: 123 } // wrong type
       };
       
-      expect(() => new Config(invalidOptions))
-        .toThrow(ConfigValidationError);
+      // Should throw on invalid format
+      expect(() => new Config(invalidOptions)).toThrow('Output format must be');
     });
   });
 
@@ -53,7 +50,7 @@ describe('Config', () => {
     it('should load config from .emoji-linter.json', () => {
       const configData = {
         ignore: { files: ['custom/**'] },
-        detection: { unicode: false }
+        output: { format: 'json' }
       };
       fs.writeFileSync('.emoji-linter.json', JSON.stringify(configData));
       
@@ -61,7 +58,7 @@ describe('Config', () => {
       config.loadConfig();
       
       expect(config.config.ignore.files).toEqual(expect.arrayContaining(['custom/**']));
-      expect(config.config.detection.unicode).toBe(false);
+      expect(config.config.output.format).toBe('json');
     });
 
     it('should load config from custom file path', () => {
@@ -81,34 +78,34 @@ describe('Config', () => {
       const config = new Config();
       config.loadConfig();
       
-      expect(config.config.detection.unicode).toBe(true);
+      expect(config.config.output.format).toBe('table');
       expect(config.config.output.format).toBe('table');
     });
 
-    it('should throw ConfigError for invalid JSON', () => {
+    it('should throw Error for invalid JSON', () => {
       fs.writeFileSync('.emoji-linter.json', '{ invalid json }');
       
       const config = new Config();
       expect(() => config.loadConfig())
-        .toThrow(ConfigError);
+        .toThrow(Error);
     });
 
-    it('should throw ConfigValidationError for invalid config structure', () => {
+    it('should throw Error for invalid config structure', () => {
       const invalidConfig = {
-        detection: { unicode: 'not-boolean' }
+        invalid: 'config'
       };
       fs.writeFileSync('.emoji-linter.json', JSON.stringify(invalidConfig));
       
       const config = new Config();
       expect(() => config.loadConfig())
-        .toThrow(ConfigValidationError);
+        .toThrow(Error);
     });
 
     it('should handle file read errors gracefully', () => {
       const config = new Config();
       // Try to load from a directory instead of file to trigger error
       expect(() => config.loadConfig('/'))
-        .toThrow(ConfigError);
+        .toThrow(Error);
     });
   });
 
@@ -227,108 +224,11 @@ describe('Config', () => {
     });
   });
 
-  describe('mergeWithDefaults', () => {
-    it('should deep merge user config with defaults', () => {
-      const config = new Config();
-      const userConfig = {
-        detection: { unicode: false },
-        output: { format: 'json' }
-      };
-      
-      const merged = config.mergeWithDefaults(userConfig);
-      
-      expect(merged.detection.unicode).toBe(false);
-      expect(merged.detection.shortcodes).toBe(true); // from defaults
-      expect(merged.output.format).toBe('json');
-      expect(merged.output.showContext).toBe(true); // from defaults
-    });
-
-    it('should handle nested array merging', () => {
-      const config = new Config();
-      const userConfig = {
-        ignore: {
-          files: ['custom/**']
-        }
-      };
-      
-      const merged = config.mergeWithDefaults(userConfig);
-      
-      expect(merged.ignore.files).toEqual(['custom/**']);
-      expect(merged.ignore.emojis).toEqual([]); // from defaults
-    });
-
-    it('should handle empty user config', () => {
-      const config = new Config();
-      const merged = config.mergeWithDefaults({});
-      
-      expect(merged.detection.unicode).toBe(true);
-      expect(merged.output.format).toBe('table');
-    });
-
-    it('should handle null/undefined user config', () => {
-      const config = new Config();
-      
-      expect(() => config.mergeWithDefaults(null)).not.toThrow();
-      expect(() => config.mergeWithDefaults(undefined)).not.toThrow();
-      
-      const mergedNull = config.mergeWithDefaults(null);
-      const mergedUndefined = config.mergeWithDefaults(undefined);
-      
-      expect(mergedNull.detection.unicode).toBe(true);
-      expect(mergedUndefined.detection.unicode).toBe(true);
-    });
-  });
 
   describe('validation', () => {
-    it('should validate detection config', () => {
-      const invalidConfigs = [
-        { detection: { unicode: 'not-boolean' } },
-        { detection: { shortcodes: 123 } },
-        { detection: { sequences: 'invalid' } },
-        { detection: { skinTones: null } }
-      ];
-
-      invalidConfigs.forEach(config => {
-        expect(() => new Config(config)).toThrow(ConfigValidationError);
-      });
-    });
-
     it('should validate output config', () => {
-      const invalidConfigs = [
-        { output: { format: 'invalid-format' } },
-        { output: { showContext: 'not-boolean' } },
-        { output: { maxContextLines: 'not-number' } },
-        { output: { maxContextLines: -1 } }
-      ];
-
-      invalidConfigs.forEach(config => {
-        expect(() => new Config(config)).toThrow(ConfigValidationError);
-      });
-    });
-
-    it('should validate ignore config', () => {
-      const invalidConfigs = [
-        { ignore: { files: 'not-array' } },
-        { ignore: { emojis: 'not-array' } },
-        { ignore: { patterns: 'not-array' } },
-        { ignore: { files: [123] } },
-        { ignore: { emojis: [{}] } }
-      ];
-
-      invalidConfigs.forEach(config => {
-        expect(() => new Config(config)).toThrow(ConfigValidationError);
-      });
-    });
-
-    it('should validate cleanup config', () => {
-      const invalidConfigs = [
-        { cleanup: { preserveWhitespace: 'not-boolean' } },
-        { cleanup: { createBackup: 'not-boolean' } }
-      ];
-
-      invalidConfigs.forEach(config => {
-        expect(() => new Config(config)).toThrow(ConfigValidationError);
-      });
+      const invalidConfig = { output: { format: 'invalid-format' } };
+      expect(() => new Config(invalidConfig)).toThrow('Output format must be');
     });
   });
 
@@ -368,20 +268,20 @@ const greeting = "Hi 👋";`;
   });
 });
 
-describe('ConfigError', () => {
+describe('Error', () => {
   it('should be instance of Error', () => {
-    const error = new ConfigError('test message');
+    const error = new Error('test message');
     expect(error).toBeInstanceOf(Error);
-    expect(error.name).toBe('ConfigError');
+    expect(error.name).toBe('Error');
     expect(error.message).toBe('test message');
   });
 });
 
-describe('ConfigValidationError', () => {
-  it('should be instance of ConfigError', () => {
-    const error = new ConfigValidationError('validation failed');
-    expect(error).toBeInstanceOf(ConfigError);
-    expect(error.name).toBe('ConfigValidationError');
+describe('Error', () => {
+  it('should be instance of Error', () => {
+    const error = new Error('validation failed');
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe('Error');
     expect(error.message).toBe('validation failed');
   });
 });

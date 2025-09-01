@@ -1,14 +1,14 @@
 /**
- * Simple emoji detector - no overengineering!
- * Just finds and removes Unicode emojis with a simple regex.
- * No shortcodes, no complex configuration, no premature optimization.
+ * Emoji detector - finds and removes Unicode emojis
  */
 
-// Simple emoji regex - this is all we need!
+// Unicode emoji regex covering all standard emoji ranges
 const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu;
 
 /**
- * Find all emojis in text - dead simple
+ * Find all emojis in text
+ * @param {string} text - Text to search
+ * @returns {Array} Array of emoji matches with location info
  */
 function findEmojis(text) {
   if (!text || typeof text !== 'string') {
@@ -26,7 +26,7 @@ function findEmojis(text) {
           emoji,
           lineNumber: lineIndex + 1,
           columnNumber: line.indexOf(emoji) + 1,
-          type: 'unicode' // We only support unicode now - much simpler!
+          type: 'unicode'
         });
       });
     }
@@ -36,7 +36,9 @@ function findEmojis(text) {
 }
 
 /**
- * Remove all emojis from text - dead simple
+ * Remove all emojis from text
+ * @param {string} text - Text to clean
+ * @returns {string} Text with emojis removed
  */
 function removeEmojis(text) {
   if (!text || typeof text !== 'string') {
@@ -46,32 +48,23 @@ function removeEmojis(text) {
 }
 
 /**
- * Legacy class wrapper to avoid breaking existing code
- * But internally it's just simple functions!
+ * Check if text contains any emojis
+ * @param {string} text - Text to check
+ * @returns {boolean} True if emojis found
  */
-class EmojiDetector {
-  constructor() {
-    // No config needed - keep it simple!
+function hasEmojis(text) {
+  if (!text || typeof text !== 'string') {
+    return false;
   }
-
-  /**
-   * Find emojis using the simple function approach
-   */
-  findEmojis(text) {
-    return findEmojis(text);
-  }
-
-  /**
-   * Remove emojis using the simple function approach
-   */
-  removeEmojis(text) {
-    return removeEmojis(text);
-  }
+  // Need to reset the regex because test() modifies lastIndex with 'g' flag
+  EMOJI_REGEX.lastIndex = 0;
+  return EMOJI_REGEX.test(text);
 }
 
+// Export functions
 module.exports = {
-  EmojiDetector,
   findEmojis,
   removeEmojis,
+  hasEmojis,
   EMOJI_REGEX
 };

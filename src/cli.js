@@ -8,12 +8,15 @@
 const fs = require('fs');
 const path = require('path');
 const { Config } = require('./core/config');
-const { EmojiDetector } = require('./core/detector');
+const { findEmojis, removeEmojis } = require('./core/detector');
 const { FileScanner } = require('./core/scanner');
 const { 
-  ValidationError, 
-  ProcessingError,
-  ErrorHandler 
+  FileError,
+  formatError,
+  formatSuccess,
+  formatInfo,
+  handleError,
+  fromSystemError
 } = require('./utils/errors');
 const { OutputFormatter, OutputUtils } = require('./utils/output');
 const { isDirectory } = require('./utils/files');
@@ -29,7 +32,7 @@ class CLI {
   constructor(customConfig = {}) {
     this.config = new Config(customConfig);
     this.scanner = new FileScanner();
-    this.detector = new EmojiDetector();
+    // Use detector functions directly
     this.formatter = new OutputFormatter();
   }
 
@@ -37,7 +40,7 @@ class CLI {
    * Parse command line arguments
    * @param {Array} args - Command line arguments (excluding node and script name)
    * @returns {Object} Parsed arguments
-   * @throws {ValidationError} When arguments are invalid
+   * @throws {Error} When arguments are invalid
    */
   parseArguments(args) {
     if (args.length === 0) {
@@ -62,9 +65,9 @@ class CLI {
     }
 
     // Parse command
-    const validCommands = ['check', 'fix', 'diff', 'list'];
+    const validCommands = ['check', 'fix', 'diff', 'list', 'install-hook'];
     if (!validCommands.includes(args[0])) {
-      throw new ValidationError(`Invalid command: ${args[0]}. Valid commands: ${validCommands.join(', ')}`);
+      throw new Error(`Invalid command: ${args[0]}. Valid commands: ${validCommands.join(', ')}`);
     }
 
     parsed.command = args[0];
@@ -78,17 +81,17 @@ class CLI {
         // Handle long options
         const optionName = arg.slice(2);
         
-        if (['help', 'version', 'verbose', 'quiet', 'backup', 'dry-run'].includes(optionName)) {
+        if (['help', 'version', 'verbose', 'quiet', 'backup', 'dry-run', 'staged'].includes(optionName)) {
           // Boolean flags
           parsed.options[this.camelCase(optionName)] = true;
         } else if (['format', 'config', 'output', 'encoding'].includes(optionName)) {
           // Options with values
           if (i + 1 >= args.length) {
-            throw new ValidationError(`Option --${optionName} requires a value`);
+            throw new Error(`Option --${optionName} requires a value`);
           }
           parsed.options[this.camelCase(optionName)] = args[++i];
         } else {
-          throw new ValidationError(`Unknown option: --${optionName}`);
+          throw new Error(`Unknown option: --${optionName}`);
         }
       } else if (arg.startsWith('-')) {
         // Handle short options
@@ -111,7 +114,7 @@ class CLI {
             parsed.options.backup = true;
             break;
           default:
-            throw new ValidationError(`Unknown option: -${flag}`);
+            throw new Error(`Unknown option: -${flag}`);
           }
         }
       } else {
@@ -131,29 +134,29 @@ class CLI {
   /**
    * Validate parsed arguments for command-specific requirements
    * @param {Object} parsed - Parsed arguments
-   * @throws {ValidationError} When arguments are invalid
+   * @throws {Error} When arguments are invalid
    */
   validateParsedArguments(parsed) {
     const { command, files, options } = parsed;
 
     // Check for conflicting options
     if (options.verbose && options.quiet) {
-      throw new ValidationError('Cannot use both --verbose and --quiet options');
+      throw new Error('Cannot use both --verbose and --quiet options');
     }
 
     // Validate format option
     if (options.format && !['table', 'json', 'minimal'].includes(options.format)) {
-      throw new ValidationError(`Invalid format: ${options.format}. Valid formats: table, json, minimal`);
+      throw new Error(`Invalid format: ${options.format}. Valid formats: table, json, minimal`);
     }
 
-    // Commands that require files
-    if (['check', 'fix', 'diff', 'list'].includes(command) && files.length === 0) {
-      throw new ValidationError(`Command '${command}' requires at least one file or directory`);
+    // Commands that require files (unless --staged is used)
+    if (['check', 'fix', 'diff', 'list'].includes(command) && files.length === 0 && !options.staged) {
+      throw new Error(`Command '${command}' requires at least one file or directory (or use --staged for git staged files)`);
     }
 
     // Validate config file if specified
     if (options.config && !fs.existsSync(options.config)) {
-      throw new ValidationError(`Config file not found: ${options.config}`, 'config');
+      throw new Error(`Config file not found: ${options.config}`);
     }
   }
 
@@ -190,15 +193,14 @@ class CLI {
 
       // Load custom config if specified
       if (parsed.options.config) {
+        // Create a new config with the custom config file
+        this.config = new Config();
         this.config.loadConfig(parsed.options.config);
-      } else {
-        // Try to load default config
-        this.config.loadConfig();
       }
 
       // Update formatter options
       this.formatter = new OutputFormatter({
-        useColors: ErrorHandler.shouldUseColors() && !parsed.options.quiet,
+        useColors: process.stdout.isTTY && !parsed.options.quiet,
         maxContextLines: this.config.config.output.maxContextLines
       });
 
@@ -206,7 +208,7 @@ class CLI {
       await this.executeCommand(parsed);
 
     } catch (error) {
-      ErrorHandler.handleError(error, parsed?.options?.verbose || false);
+      handleError(error, parsed?.options?.verbose || false);
     }
   }
 
@@ -230,8 +232,40 @@ class CLI {
     case 'list':
       await this.listMode(files, options);
       break;
+    case 'install-hook':
+      await this.installHook(options);
+      break;
     default:
       throw new ValidationError(`Unknown command: ${command}`);
+    }
+  }
+
+  /**
+   * Get list of git staged files
+   * @returns {Promise<Array>} Array of staged file paths
+   */
+  async getStagedFiles() {
+    const { execSync } = require('child_process');
+    
+    try {
+      // Get list of staged files from git
+      const result = execSync('git diff --cached --name-only --diff-filter=ACM', {
+        encoding: 'utf8'
+      });
+      
+      // Split by newline and filter out empty strings
+      const files = result.split('\n').filter(file => file.trim());
+      
+      if (files.length === 0) {
+        throw new Error('No staged files found. Stage files with "git add" before running with --staged flag.');
+      }
+      
+      return files;
+    } catch (error) {
+      if (error.message.includes('not a git repository')) {
+        throw new Error('Not in a git repository. The --staged flag only works inside git repositories.');
+      }
+      throw error;
     }
   }
 
@@ -284,8 +318,17 @@ class CLI {
     const startTime = Date.now();
 
     try {
-      // Expand directory paths into individual file paths
-      const expandedFiles = await this.expandPaths(files);
+      // Get files to check - either from arguments or staged files
+      let expandedFiles;
+      if (options.staged) {
+        expandedFiles = await this.getStagedFiles();
+        if (!options.quiet) {
+          console.log(formatInfo(`Checking ${expandedFiles.length} staged files...`));
+        }
+      } else {
+        // Expand directory paths into individual file paths
+        expandedFiles = await this.expandPaths(files);
+      }
       
       // Process files
       for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
@@ -298,7 +341,7 @@ class CLI {
           });
           
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(scanResult.error));
+            console.error(formatError(scanResult.error));
           }
           continue;
         }
@@ -321,7 +364,7 @@ class CLI {
 
         // Detect emojis
         try {
-          const emojis = this.detector.findEmojis(scanResult.content);
+          const emojis = findEmojis(scanResult.content);
           
           // Filter out ignored emojis and lines
           const filteredEmojis = emojis.filter(emoji => {
@@ -359,7 +402,7 @@ class CLI {
           });
 
         } catch (error) {
-          const processingError = new ProcessingError(
+          const processingError = new Error(
             `Failed to process emojis: ${error.message}`,
             scanResult.filePath
           );
@@ -369,7 +412,7 @@ class CLI {
           });
           
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(processingError));
+            console.error(formatError(processingError));
           }
         }
       }
@@ -399,7 +442,7 @@ class CLI {
       process.exit(exitCode);
 
     } catch (error) {
-      throw new ProcessingError(`Check mode failed: ${error.message}`);
+      throw new Error(`Check mode failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
@@ -420,7 +463,7 @@ class CLI {
       for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         if (scanResult.error) {
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(scanResult.error));
+            console.error(formatError(scanResult.error));
           }
           continue;
         }
@@ -440,7 +483,7 @@ class CLI {
 
         try {
           // First, detect emojis to see if file needs processing
-          const emojis = this.detector.findEmojis(scanResult.content);
+          const emojis = findEmojis(scanResult.content);
           
           // Filter out ignored emojis and lines
           const filteredEmojis = emojis.filter(emoji => {
@@ -468,7 +511,7 @@ class CLI {
           }
 
           // Remove emojis from content
-          const fixedContent = this.detector.removeEmojis(scanResult.content);
+          const fixedContent = removeEmojis(scanResult.content);
 
           // Create backup if requested
           if (options.backup) {
@@ -501,13 +544,13 @@ class CLI {
           });
 
         } catch (error) {
-          const processingError = new ProcessingError(
+          const processingError = new Error(
             `Failed to fix file: ${error.message}`,
             scanResult.filePath
           );
           
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(processingError));
+            console.error(formatError(processingError));
           }
         }
       }
@@ -515,18 +558,18 @@ class CLI {
       // Show summary
       if (!options.quiet) {
         console.log(
-          ErrorHandler.formatSuccess(
+          formatSuccess(
             `Fixed ${filesModified} files, removed ${totalEmojisRemoved} emojis`
           )
         );
       }
 
       if (options.dryRun && !options.quiet) {
-        console.log(ErrorHandler.formatInfo('Dry run - no files were modified'));
+        console.log(formatInfo('Dry run - no files were modified'));
       }
 
     } catch (error) {
-      throw new ProcessingError(`Fix mode failed: ${error.message}`);
+      throw new Error(`Fix mode failed: ${error.message}`);
     }
   }
 
@@ -545,7 +588,7 @@ class CLI {
       for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         if (scanResult.error) {
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(scanResult.error));
+            console.error(formatError(scanResult.error));
           }
           continue;
         }
@@ -562,7 +605,7 @@ class CLI {
 
         try {
           const originalContent = scanResult.content;
-          const fixedContent = this.detector.removeEmojis(originalContent);
+          const fixedContent = removeEmojis(originalContent);
 
           if (originalContent === fixedContent) {
             diffs.push({
@@ -597,13 +640,13 @@ class CLI {
           });
 
         } catch (error) {
-          const processingError = new ProcessingError(
+          const processingError = new Error(
             `Failed to generate diff: ${error.message}`,
             scanResult.filePath
           );
           
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(processingError));
+            console.error(formatError(processingError));
           }
         }
       }
@@ -617,7 +660,7 @@ class CLI {
       }
 
     } catch (error) {
-      throw new ProcessingError(`Diff mode failed: ${error.message}`);
+      throw new Error(`Diff mode failed: ${error.message}`);
     }
   }
 
@@ -636,7 +679,7 @@ class CLI {
       for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
         if (scanResult.error) {
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(scanResult.error));
+            console.error(formatError(scanResult.error));
           }
           continue;
         }
@@ -652,7 +695,7 @@ class CLI {
         }
 
         try {
-          const emojis = this.detector.findEmojis(scanResult.content);
+          const emojis = findEmojis(scanResult.content);
           
           // Filter ignored emojis and lines
           const filteredEmojis = emojis.filter(emoji => {
@@ -671,13 +714,13 @@ class CLI {
           }
 
         } catch (error) {
-          const processingError = new ProcessingError(
+          const processingError = new Error(
             `Failed to analyze file: ${error.message}`,
             scanResult.filePath
           );
           
           if (!options.quiet) {
-            console.error(ErrorHandler.formatError(processingError));
+            console.error(formatError(processingError));
           }
         }
       }
@@ -691,7 +734,68 @@ class CLI {
       }
 
     } catch (error) {
-      throw new ProcessingError(`List mode failed: ${error.message}`);
+      throw new Error(`List mode failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Install pre-commit hook
+   * @param {Object} options - Command options
+   */
+  async installHook(options) {
+    const { execSync } = require('child_process');
+    
+    try {
+      // Check if we're in a git repository
+      execSync('git rev-parse --git-dir', { encoding: 'utf8' });
+    } catch (error) {
+      throw new Error('Not in a git repository. Run this command from the root of your git project.');
+    }
+
+    const hookPath = path.join('.git', 'hooks', 'pre-commit');
+    const hookContent = `#!/bin/sh
+# emoji-linter pre-commit hook
+# Checks staged files for emojis before allowing commit
+
+# Check if emoji-linter is available
+if ! command -v emoji-linter &> /dev/null; then
+  echo "emoji-linter is not installed. Please install it first:"
+  echo "  npm install -g emoji-linter"
+  exit 1
+fi
+
+# Run emoji-linter on staged files
+emoji-linter check --staged
+
+# Exit with the same code as emoji-linter
+exit $?
+`;
+
+    try {
+      // Check if hook already exists
+      if (fs.existsSync(hookPath)) {
+        if (!options.force) {
+          throw new Error(`Pre-commit hook already exists at ${hookPath}. Use --force to overwrite.`);
+        }
+        if (!options.quiet) {
+          console.log(formatInfo('Overwriting existing pre-commit hook...'));
+        }
+      }
+
+      // Write the hook file
+      fs.writeFileSync(hookPath, hookContent, { mode: 0o755 });
+      
+      // Make it executable (belt and suspenders - mode should handle it)
+      fs.chmodSync(hookPath, 0o755);
+
+      if (!options.quiet) {
+        console.log(formatSuccess('Pre-commit hook installed successfully!'));
+        console.log('\nThe hook will check staged files for emojis before each commit.');
+        console.log('To skip the hook for a single commit, use: git commit --no-verify');
+        console.log('\nTo uninstall the hook, run: rm .git/hooks/pre-commit');
+      }
+    } catch (error) {
+      throw new Error(`Failed to install hook: ${error.message}`);
     }
   }
 
@@ -706,15 +810,17 @@ Usage:
   emoji-linter <command> [options] <files...>
 
 Commands:
-  check     Check files for emoji usage and report results
-  fix       Remove emojis from files (with optional backup)
-  diff      Show what changes would be made without modifying files
-  list      List files that contain emojis
+  check         Check files for emoji usage and report results
+  fix           Remove emojis from files (with optional backup)
+  diff          Show what changes would be made without modifying files
+  list          List files that contain emojis
+  install-hook  Install git pre-commit hook to check staged files
 
 Options:
   --format <format>    Output format: table, json, minimal (default: table)
   --config <path>      Path to configuration file
   --backup, -b         Create backup files before fixing (fix mode only)
+  --staged             Check only git staged files (check mode)
   --dry-run           Show what would be done without making changes
   --verbose, -v        Show verbose output
   --quiet, -q          Suppress non-essential output
@@ -723,10 +829,16 @@ Options:
 
 Examples:
   emoji-linter check src/                    # Check all files in src/
+  emoji-linter check --staged                # Check only staged files
   emoji-linter fix --backup src/*.js         # Fix JS files with backup
   emoji-linter diff --format json src/       # Show diff in JSON format
   emoji-linter list --format minimal src/    # List files with minimal output
-  emoji-linter check --config custom.json   # Use custom config file
+  emoji-linter install-hook                  # Install git pre-commit hook
+
+Pre-commit Hook:
+  emoji-linter install-hook                  # Install hook
+  git commit                                 # Hook runs automatically
+  git commit --no-verify                     # Skip hook for one commit
 
 Configuration:
   Create a .emoji-linter.config.json file to customize behavior. 
@@ -819,10 +931,9 @@ Exit Codes:
 
       // Load custom config if specified
       if (parsed.options.config) {
+        // Create a new config with the custom config file
+        this.config = new Config();
         this.config.loadConfig(parsed.options.config);
-      } else {
-        // Try to load default config
-        this.config.loadConfig();
       }
 
       // Update formatter options
@@ -911,7 +1022,7 @@ Exit Codes:
 
         // Detect emojis
         try {
-          const emojis = this.detector.findEmojis(scanResult.content);
+          const emojis = findEmojis(scanResult.content);
           
           // Filter out ignored emojis and lines
           const filteredEmojis = emojis.filter(emoji => {
@@ -949,7 +1060,7 @@ Exit Codes:
           });
 
         } catch (error) {
-          const processingError = new ProcessingError(
+          const processingError = new Error(
             `Failed to process emojis: ${error.message}`,
             scanResult.filePath
           );
@@ -963,7 +1074,7 @@ Exit Codes:
       return { files: results, summary };
 
     } catch (error) {
-      throw new ProcessingError(`Check mode failed: ${error.message}`);
+      throw new Error(`Check mode failed: ${error.message}`);
     }
   }
 

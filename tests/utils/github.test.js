@@ -254,7 +254,7 @@ describe('GitHubUtils', () => {
     it('should validate valid inputs', () => {
       const validInputs = [
         { mode: 'clean', path: '.', configFile: '.emoji-linter.json' },
-        { mode: 'require', path: './src', configFile: 'custom.json' },
+        { mode: 'clean', path: './src', configFile: 'custom.json' },
         { mode: 'forbid', path: '/absolute/path', configFile: '.emoji-linter.json' }
       ];
 
@@ -266,7 +266,7 @@ describe('GitHubUtils', () => {
     it('should reject invalid mode', () => {
       const inputs = { mode: 'invalid', path: '.', configFile: '.emoji-linter.json' };
       expect(() => GitHubUtils.validateInputs(inputs))
-        .toThrow('Invalid mode: invalid. Valid modes: clean, require, forbid');
+        .toThrow('Invalid mode: invalid. Valid modes: clean, forbid');
     });
 
     it('should reject empty path', () => {

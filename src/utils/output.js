@@ -5,7 +5,7 @@
 
 /* eslint-disable no-control-regex */
 
-const { OutputError } = require('./errors');
+const { formatError } = require('./errors');
 
 /**
  * Output formatter class
@@ -41,7 +41,7 @@ class OutputFormatter {
     case 'minimal':
       return this.formatMinimal(results, summary);
     default:
-      throw new OutputError(`Unsupported output format: ${format}`, format);
+      throw new Error(`Unsupported output format: ${format}`);
     }
   }
 
@@ -79,7 +79,7 @@ class OutputFormatter {
         const row = this.formatTableRow([
           this.truncatePath(result.filePath, 40),
           emoji.lineNumber.toString(),
-          emoji.columnStart.toString(),
+          emoji.columnNumber.toString(),
           emoji.emoji,
           this.colorize(emoji.type, 'type')
         ]);
@@ -459,21 +459,7 @@ const OutputUtils = {
   }
 };
 
-/**
- * Format output based on format and data
- * @param {Array} results - Results to format
- * @param {string} format - Output format
- * @param {Object} summary - Summary statistics
- * @param {Object} options - Formatting options
- * @returns {string} Formatted output
- */
-function formatOutput(results, format = 'table', summary = {}, options = {}) {
-  const formatter = new OutputFormatter(options);
-  return formatter.formatResults(results, format, summary);
-}
-
 module.exports = {
   OutputFormatter,
-  OutputUtils,
-  formatOutput
+  OutputUtils
 };
