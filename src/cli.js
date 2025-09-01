@@ -439,25 +439,36 @@ class CLI {
         }
 
         try {
-          // Remove emojis first
-          const fixedContent = this.detector.removeEmojis(scanResult.content);
+          // First, detect emojis to see if file needs processing
+          const emojis = this.detector.findEmojis(scanResult.content);
+          
+          // Filter out ignored emojis and lines
+          const filteredEmojis = emojis.filter(emoji => {
+            // Check if emoji should be ignored
+            if (this.config.shouldIgnoreEmoji(emoji.emoji)) {
+              return false;
+            }
 
-          // Check if content actually changed
-          if (fixedContent === scanResult.content) {
+            // Check if line should be ignored
+            const lines = scanResult.content.split('\n');
+            const line = lines[emoji.lineNumber - 1];
+            if (line && this.config.shouldIgnoreLine(line)) {
+              return false;
+            }
+
+            return true;
+          });
+
+          // Skip files with no emojis that need fixing
+          if (filteredEmojis.length === 0) {
             if (options.verbose) {
-              console.log(`No changes needed: ${scanResult.filePath}`);
+              console.log(`No emojis to fix: ${scanResult.filePath}`);
             }
             continue;
           }
 
-          // Count emojis that would be removed for statistics
-          const emojisBeforeRemoval = this.detector.findEmojis(scanResult.content);
-          const filteredEmojis = emojisBeforeRemoval.filter(emoji => {
-            const lines = scanResult.content.split('\n');
-            const line = lines[emoji.lineNumber - 1];
-            return !this.config.shouldIgnoreEmoji(emoji.emoji) &&
-                   !(line && this.config.shouldIgnoreLine(line));
-          });
+          // Remove emojis from content
+          const fixedContent = this.detector.removeEmojis(scanResult.content);
 
           // Create backup if requested
           if (options.backup) {
