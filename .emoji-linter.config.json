@@ -1,23 +1,16 @@
 {
   "ignore": {
     "files": [
-      "**/*.md",
-      "docs/**",
-      "test/fixtures/**",
+      "README.md",
+      ".project/**/ai-behavior.md",
       "**/node_modules/**",
       ".git/**",
       "dist/**",
       "build/**",
       "coverage/**",
-      "**/*.min.js",
-      "**/*.map",
-      ".temp/**",
-      ".github/**",
-      "**/.venv/**",
-      "**/venv/**",
-      "**/*.py[co]",
       "tests/**",
-      ".project/**"
+      "**/*.test.js",
+      "**/*.spec.js"
     ],
     "emojis": ["🚨", "⚠️"]
   },

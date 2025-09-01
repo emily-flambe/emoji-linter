@@ -11,7 +11,7 @@ const { Config } = require('./core/config');
 const { findEmojis, removeEmojis } = require('./core/detector');
 const { FileScanner } = require('./core/scanner');
 const { 
-  FileError,
+  ValidationError,
   formatError,
   formatSuccess,
   formatInfo,
@@ -65,7 +65,7 @@ class CLI {
     // Parse command
     const validCommands = ['check', 'fix', 'diff', 'list', 'install-hook'];
     if (!validCommands.includes(args[0])) {
-      throw new Error(`Invalid command: ${args[0]}. Valid commands: ${validCommands.join(', ')}`);
+      throw new ValidationError(`Invalid command: ${args[0]}. Valid commands: ${validCommands.join(', ')}`);
     }
 
     parsed.command = args[0];
@@ -149,12 +149,12 @@ class CLI {
 
     // Commands that require files (unless --staged is used)
     if (['check', 'fix', 'diff', 'list'].includes(command) && files.length === 0 && !options.staged) {
-      throw new Error(`Command '${command}' requires at least one file or directory (or use --staged for git staged files)`);
+      throw new ValidationError(`Command '${command}' requires at least one file or directory (or use --staged for git staged files)`);
     }
 
     // Validate config file if specified
     if (options.config && !fs.existsSync(options.config)) {
-      throw new Error(`Config file not found: ${options.config}`);
+      throw new ValidationError(`Config file not found: ${options.config}`);
     }
   }
 
@@ -802,7 +802,16 @@ exit $?
    */
   showHelp() {
     const help = `
-emoji-linter - Detect and manage emoji usage in your codebase
+emoji-linter - Remove basic Unicode emojis from your code
+
+WHAT IT DETECTS:
+  - Common Unicode emojis (😀 ✨ 🚀)
+  - Basic emoji ranges (see README for specifics)
+  
+WHAT IT DOESN'T DETECT:
+  - Emoji shortcodes (:rocket: :smile:)
+  - Complex sequences (👨‍👩‍👧‍👦)
+  - Full Unicode 15.1 emoji set
 
 Usage:
   emoji-linter <command> [options] <files...>

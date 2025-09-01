@@ -1,7 +1,7 @@
 {
   "name": "emoji-linter",
   "version": "1.0.0",
-  "description": "GitHub Action to validate emoji usage in commits, PRs, and branches",
+  "description": "CLI tool and GitHub Action for detecting and removing basic Unicode emojis from source code",
   "main": "src/index.js",
   "bin": {
     "emoji-linter": "./bin/emoji-linter.js"

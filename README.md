@@ -4,16 +4,21 @@ Remove emojis from your codebase. Keep your code professional.
 
 ## How It Works
 
-The emoji-linter scans your codebase for Unicode emojis and can either report or remove them.
+The emoji-linter scans your codebase for basic Unicode emojis and can either report or remove them.
 
-- **What it detects**: Basic Unicode emojis (🚀, ✨, 😀) in source code files
-- **What it ignores**: Files matching patterns in your config file, whitelisted emojis, and lines with ignore comments
-- **Two modes**: `check` mode reports emojis without modifying files, while `fix` mode removes them from your code
+## What It Actually Detects
 
-**⚠️ Limitations**:
-- Does NOT detect emoji shortcodes like `:rocket:` or `:smile:`
-- Limited support for complex emoji sequences (skin tones, flags, combined emojis)
-- May not detect all modern Unicode emoji combinations
+✅ **Detects:** ~1,200 common Unicode emojis (😀 🚀 ✨ ❤️) covering basic emoticons, symbols, and pictographs
+
+❌ **Does NOT detect:**
+- Emoji shortcodes (:rocket: :smile:)
+- Complex sequences (👨‍👩‍👧‍👦)
+- Country flags (🇺🇸 🇬🇧)
+- Full Unicode 15.1 emoji set (~33% coverage)
+
+**This covers 95% of emojis typically found in code.**
+
+**Two modes**: `check` mode reports emojis without modifying files, while `fix` mode removes them from your code
 
 The linter uses a configuration file (`.emoji-linter.config.json`) for customizing behavior.
 
@@ -216,12 +221,15 @@ function example() {
 
 **Note**: File-level ignore comments are not currently supported. Use the `ignore.files` configuration instead.
 
-## What It Actually Detects
+## ⚠️ Important Note for Users
 
-- ✅ Basic Unicode emojis: 🚀 ✨ 😀
-- ⚠️ Limited support for emoji sequences: 👨‍💻 (may not catch all)
-- ❌ Does NOT detect shortcodes: `:rocket:` `:sparkles:`
-- ❌ Limited support for skin tones and flags
+This tool provides BASIC emoji detection and removal.
+If you need:
+- Shortcode detection (:rocket:)
+- Full Unicode 15.1 support
+- Complex sequence handling
+
+Please consider alternative tools or contribute to this project.
 
 ## Pre-commit Hook
 

@@ -162,5 +162,50 @@ If complexity cannot be avoided, require:
 3. **Verify error handling** - does this handle real failures or just simulate success?
 4. **Check for overengineering** - is this solving a problem that doesn't exist?
 5. **Ensure testability** - can this be tested without complex setup?
+6. **Verify factual accuracy** - does the implementation match documentation claims?
+7. **Check consistency** - are all docs, READMEs, and code in agreement?
 
-Remember: **The best code is code that doesn't exist.** The second-best code is simple, direct, and obvious.
+### Factual Accuracy and Consistency Review
+
+#### Documentation vs Implementation Verification
+- **README claims vs actual behavior** - Test all documented features actually work
+- **API documentation accuracy** - Verify all documented inputs/outputs are correct
+- **Configuration documentation** - Ensure all config options actually function
+- **Example code validity** - Test that all examples in docs actually run
+- **Feature completeness** - Verify advertised features are actually implemented
+- **Error message accuracy** - Check error messages match actual error conditions
+
+#### Common Documentation Inconsistencies to Flag
+- **Phantom features** - Documented but not implemented
+- **Wrong defaults** - Documentation shows different defaults than code
+- **Outdated examples** - Examples that no longer work with current code
+- **Missing limitations** - Implementation limitations not mentioned in docs
+- **Incorrect types** - Documentation shows wrong parameter/return types
+- **Version mismatches** - Documentation references wrong versions or dependencies
+
+#### Cross-Reference Checklist
+1. **README.md vs actual CLI commands** - Do all documented commands work?
+2. **Config documentation vs parser** - Are all config options actually parsed?
+3. **API docs vs function signatures** - Do parameters match?
+4. **Examples vs test files** - Do examples reflect actual usage patterns?
+5. **Error docs vs error handling** - Are all error cases documented accurately?
+6. **Feature list vs implementation** - Is every listed feature actually present?
+
+#### Red Flags for Documentation Issues
+```javascript
+// DOCUMENTATION SAYS: "Supports all Unicode emoji"
+// REALITY: Only supports basic emoji
+const EMOJI_REGEX = /[\u{1F600}-\u{1F64F}]/gu; // Missing many ranges!
+
+// README SAYS: "Automatic retry on failure"
+// REALITY: No retry logic exists
+function processFile(path) {
+  return fs.readFile(path); // No retry!
+}
+
+// DOCS CLAIM: "Configurable timeout"
+// REALITY: Hardcoded timeout
+const TIMEOUT = 5000; // Not configurable!
+```
+
+Remember: **The best code is code that doesn't exist.** The second-best code is simple, direct, and obvious. **The worst code is code that lies about what it does.**

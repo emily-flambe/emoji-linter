@@ -15,6 +15,16 @@ class FileError extends Error {
 }
 
 /**
+ * Validation error for invalid CLI arguments
+ */
+class ValidationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+/**
  * Format error message with optional colors
  * @param {Error} error - Error to format
  * @param {boolean} useColors - Whether to use colors
@@ -79,6 +89,7 @@ function handleError(error, verbose = false) {
 
 module.exports = {
   FileError,
+  ValidationError,
   formatError,
   formatSuccess,
   formatInfo,
