@@ -28,9 +28,8 @@ inputs:
     required: false
     default: 'true'
   github-token:
-    description: 'GitHub token for posting PR comments (automatically provided in most cases)'
+    description: 'GitHub token for posting PR comments'
     required: false
-    default: ${{ github.token }}
 
 outputs:
   has-emojis:

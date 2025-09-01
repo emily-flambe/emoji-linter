@@ -125,7 +125,7 @@ test-scenarios:
 strategy:
   matrix:
     os: [ubuntu-latest, windows-latest, macos-latest]
-    node: [20, 21]
+    node: [18, 20]
     mode: [require, forbid, count]
 ```
 

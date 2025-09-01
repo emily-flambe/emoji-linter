@@ -281,7 +281,7 @@ class Config {
     }
 
     if (Object.prototype.hasOwnProperty.call(output, 'format')) {
-      const validFormats = ['table', 'json', 'csv'];
+      const validFormats = ['table', 'json', 'minimal'];
       if (!validFormats.includes(output.format)) {
         throw new ConfigValidationError(`Output format must be one of: ${validFormats.join(', ')}`);
       }
