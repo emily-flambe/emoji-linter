@@ -1,284 +1,88 @@
 /**
- * Core FileScanner class for efficient file system scanning
- * Provides text file detection, binary file filtering, and streaming capabilities
- */
-const {
-  isTextFile,
-  getFileStats,
-  readFileContent,
-  walkDirectory,
-  exists,
-  isDirectory,
-  normalizePath
-} = require('../utils/files');
-
-/**
- * Custom error class for file processing errors
- */
-class FileProcessingError extends Error {
-  /**
-   * Creates a new FileProcessingError
-   * @param {string} message - Error message
-   * @param {string} filePath - Path to the file that caused the error
-   * @param {string} [code] - Error code (e.g., 'ENOENT', 'EACCES')
-   */
-  constructor(message, filePath, code = null) {
-    super(message);
-    this.name = 'FileProcessingError';
-    this.filePath = filePath;
-    this.code = code;
-  }
-
-  /**
-   * Returns a detailed error string
-   * @returns {string} Error description with context
-   */
-  toString() {
-    return `${this.name}: ${this.message} (${this.filePath})${this.code ? ` [${this.code}]` : ''}`;
-  }
-}
-
-/**
- * File scanning result structure
- * @typedef {Object} ScanResult
- * @property {string} filePath - Absolute path to the file
- * @property {string} content - File content (empty for binary files)
- * @property {boolean} isTextFile - Whether the file is detected as text
- * @property {boolean} isComplete - Whether the entire file was read
- * @property {number} size - File size in bytes
- * @property {import('fs').Stats} stats - File system stats
- * @property {FileProcessingError|null} error - Processing error if any
+ * File scanner for emoji-linter
  */
 
-/**
- * FileScanner configuration
- * @typedef {Object} ScannerConfig
- * @property {number} maxFileSize - Maximum file size to read completely (default 50MB)
- * @property {string} encoding - Text file encoding (default 'utf8')
- * @property {Set<string>} [binaryExtensions] - Additional binary extensions
- * @property {Set<string>} [textExtensions] - Additional text extensions
- */
+const fs = require('fs');
+const path = require('path');
 
 /**
- * High-performance file system scanner with binary detection and streaming
+ * File scanner class
  */
 class FileScanner {
   /**
-   * Creates a new FileScanner instance
-   * @param {ScannerConfig} [config] - Scanner configuration
+   * Scan files for processing
+   * @param {Array} files - Array of file paths
+   * @returns {AsyncGenerator} Yields scan results
    */
-  constructor(config = {}) {
-    this.config = {
-      maxFileSize: 50 * 1024 * 1024, // 50MB default
-      encoding: 'utf8',
-      ...config
-    };
-  }
-
-  /**
-   * Determines if a file should be treated as text based on its path
-   * @param {string} filePath - The file path to check
-   * @returns {boolean} True if the file should be treated as text
-   */
-  isTextFile(filePath) {
-    return isTextFile(filePath);
-  }
-
-  /**
-   * Reads file content with memory efficiency considerations
-   * @param {string} filePath - Path to the file to read
-   * @returns {Promise<{content: string, isComplete: boolean, size: number, stats: import('fs').Stats}>}
-   */
-  async readFileContent(filePath) {
-    const normalizedPath = normalizePath(filePath);
-    
-    try {
-      // Check if file exists first
-      if (!(await exists(normalizedPath))) {
-        throw new FileProcessingError(
-          `File not found: ${normalizedPath}`,
-          normalizedPath,
-          'ENOENT'
-        );
+  async *scanFiles(files) {
+    for (const filePath of files) {
+      try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        yield {
+          filePath,
+          content,
+          size: Buffer.byteLength(content, 'utf8'),
+          isTextFile: true,
+          isComplete: true,
+          error: null
+        };
+      } catch (error) {
+        yield {
+          filePath,
+          content: null,
+          size: 0,
+          isTextFile: false,
+          isComplete: false,
+          error
+        };
       }
-
-      // Get file stats
-      const stats = await getFileStats(normalizedPath);
-      
-      // Read file content with size limits
-      const { content, isComplete, size } = await readFileContent(normalizedPath, {
-        maxSize: this.config.maxFileSize,
-        encoding: this.config.encoding
-      });
-
-      return {
-        content,
-        isComplete,
-        size,
-        stats
-      };
-    } catch (error) {
-      // Wrap system errors in FileProcessingError
-      if (error instanceof FileProcessingError) {
-        throw error;
-      }
-      
-      const errorCode = error.code || 'UNKNOWN';
-      throw new FileProcessingError(
-        `Failed to read file: ${error.message}`,
-        normalizedPath,
-        errorCode
-      );
     }
   }
 
   /**
-   * Scans multiple files and yields results as an async generator
-   * @param {string[]} filePaths - Array of file paths to scan
-   * @yields {ScanResult} Scan results for each file
+   * Scan directory for files
+   * @param {string} dir - Directory path
+   * @returns {AsyncGenerator} Yields file paths
    */
-  async* scanFiles(filePaths) {
-    for (const filePath of filePaths) {
-      const normalizedPath = normalizePath(filePath);
-      const result = {
-        filePath: normalizedPath,
-        content: '',
-        isTextFile: this.isTextFile(normalizedPath),
-        isComplete: false,
-        size: 0,
-        stats: null,
-        error: null
-      };
+  async *scanDirectory(dir) {
+    const files = this.getFilesRecursive(dir);
+    for (const file of files) {
+      yield { filePath: file, error: null };
+    }
+  }
 
-      try {
-        // Skip binary files - don't read content but provide metadata
-        if (!result.isTextFile) {
-          // Still get file stats for binary files
-          if (await exists(normalizedPath)) {
-            result.stats = await getFileStats(normalizedPath);
-            result.size = result.stats.size;
-            result.isComplete = true; // Binary files are "complete" without reading content
-          } else {
-            throw new FileProcessingError(
-              `File not found: ${normalizedPath}`,
-              normalizedPath,
-              'ENOENT'
-            );
+  /**
+   * Get all files recursively
+   * @param {string} dir - Directory path
+   * @returns {Array} Array of file paths
+   */
+  getFilesRecursive(dir) {
+    const files = [];
+    
+    try {
+      const items = fs.readdirSync(dir);
+      
+      for (const item of items) {
+        const fullPath = path.join(dir, item);
+        
+        try {
+          const stat = fs.statSync(fullPath);
+          
+          if (stat.isDirectory()) {
+            files.push(...this.getFilesRecursive(fullPath));
+          } else if (stat.isFile()) {
+            files.push(fullPath);
           }
-        } else {
-          // Read text file content
-          const fileData = await this.readFileContent(normalizedPath);
-          result.content = fileData.content;
-          result.isComplete = fileData.isComplete;
-          result.size = fileData.size;
-          result.stats = fileData.stats;
-        }
-      } catch (error) {
-        // Store error but continue processing other files
-        if (error instanceof FileProcessingError) {
-          result.error = error;
-        } else {
-          result.error = new FileProcessingError(
-            `Unexpected error: ${error.message}`,
-            normalizedPath,
-            error.code
-          );
+        } catch (error) {
+          // Skip files we can't access
         }
       }
-
-      yield result;
-    }
-  }
-
-  /**
-   * Recursively scans a directory and yields results as an async generator
-   * @param {string} dirPath - Directory path to scan
-   * @yields {ScanResult} Scan results for each file found
-   */
-  async* scanDirectory(dirPath) {
-    const normalizedPath = normalizePath(dirPath);
-    
-    try {
-      // Validate directory exists
-      if (!(await exists(normalizedPath))) {
-        throw new FileProcessingError(
-          `Directory not found: ${normalizedPath}`,
-          normalizedPath,
-          'ENOENT'
-        );
-      }
-
-      // Validate it's actually a directory
-      if (!(await isDirectory(normalizedPath))) {
-        throw new FileProcessingError(
-          `Path is not a directory: ${normalizedPath}`,
-          normalizedPath,
-          'ENOTDIR'
-        );
-      }
-
-      // Walk directory and process files
-      const filePaths = [];
-      
-      try {
-        for await (const filePath of walkDirectory(normalizedPath)) {
-          filePaths.push(filePath);
-        }
-      } catch (error) {
-        throw new FileProcessingError(
-          `Failed to read directory: ${error.message}`,
-          normalizedPath,
-          error.code || 'EACCES'
-        );
-      }
-
-      // Process all found files
-      yield* this.scanFiles(filePaths);
-      
     } catch (error) {
-      if (error instanceof FileProcessingError) {
-        throw error;
-      }
-      
-      throw new FileProcessingError(
-        `Directory scan failed: ${error.message}`,
-        normalizedPath,
-        error.code || 'UNKNOWN'
-      );
+      // Skip directories we can't read
     }
-  }
-
-  /**
-   * Gets scanner configuration
-   * @returns {ScannerConfig} Current configuration
-   */
-  getConfig() {
-    return { ...this.config };
-  }
-
-  /**
-   * Updates scanner configuration
-   * @param {Partial<ScannerConfig>} newConfig - Configuration updates
-   */
-  updateConfig(newConfig) {
-    this.config = { ...this.config, ...newConfig };
-  }
-
-  /**
-   * Gets performance statistics for the scanner
-   * @returns {Object} Performance metrics
-   */
-  getPerformanceStats() {
-    return {
-      maxFileSize: this.config.maxFileSize,
-      encoding: this.config.encoding,
-      memoryEfficient: true,
-      streamingEnabled: true
-    };
+    
+    return files;
   }
 }
 
-module.exports = {
-  FileScanner,
-  FileProcessingError
-};
+module.exports = { FileScanner };

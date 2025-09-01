@@ -15,8 +15,7 @@ const {
   formatError,
   formatSuccess,
   formatInfo,
-  handleError,
-  fromSystemError
+  handleError
 } = require('./utils/errors');
 const { OutputFormatter, OutputUtils } = require('./utils/output');
 const { isDirectory } = require('./utils/files');
@@ -32,7 +31,6 @@ class CLI {
   constructor(customConfig = {}) {
     this.config = new Config(customConfig);
     this.scanner = new FileScanner();
-    // Use detector functions directly
     this.formatter = new OutputFormatter();
   }
 

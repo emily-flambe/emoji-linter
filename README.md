@@ -6,9 +6,11 @@ Remove emojis from your codebase. Keep your code professional.
 
 The emoji-linter scans your codebase for emojis and can either report or remove them. It uses comprehensive Unicode patterns to detect:
 
-- **What gets linted**: All emojis in source code files, including Unicode emojis (🚀), shortcodes (:rocket:), emoji sequences (👨‍💻), skin tone variants (👋🏻), and country flags (🇺🇸)
-- **What gets ignored**: Files matching ignore patterns (like `*.md`, `node_modules/`), whitelisted emojis specified in config, and lines with ignore comments
+- **What gets detected**: Unicode emojis (🚀, ✨, 😀) in source code files. Basic support for emoji sequences, but may not fully handle complex combinations with modifiers.
+- **What gets ignored**: Files matching ignore patterns (like `node_modules/`, `dist/`), whitelisted emojis specified in config, and lines with ignore comments
 - **Two modes**: `check` mode reports emojis without modifying files, while `fix` mode removes them from your code
+
+**Note**: This tool focuses on standard Unicode emojis. It does NOT detect shortcodes like `:rocket:` and has limited support for complex emoji sequences with skin tones or flags.
 
 The linter respects your configuration file (`.emoji-linter.config.json`) and inline ignore comments, making it flexible for different project needs.
 
