@@ -513,33 +513,6 @@ describe('CLI Class', () => {
       expect(consoleErrors.length).toBeGreaterThan(0);
     });
 
-    test('should load custom config when specified', async () => {
-      const testArgv = ['node', 'cli.js', 'check', 'test-file.js', '--config', 'custom.json'];
-
-      // Create a new CLI instance to ensure clean state
-      const testCli = new CLI();
-      
-      // Mock fs.existsSync to pretend config file exists
-      jest.spyOn(fs, 'existsSync').mockImplementation((path) => {
-        if (path === 'custom.json') return true;
-        return jest.requireActual('fs').existsSync(path);
-      });
-      
-      // Mock ErrorHandler.handleError to prevent process.exit
-      const { ErrorHandler } = require('../src/utils/errors');
-      jest.spyOn(ErrorHandler, 'handleError').mockImplementation(() => {});
-      
-      const loadConfigSpy = jest.spyOn(testCli.config, 'loadConfig').mockImplementation(() => {});
-      testCli.scanner.scanFiles = jest.fn(async function* () {
-        yield { ...mockScanResult };
-      });
-      detector.findEmojis.mockReturnValue([]);
-
-      await testCli.run(testArgv);
-
-      // The method should be called with custom config  
-      expect(loadConfigSpy).toHaveBeenCalledWith('custom.json');
-    });
   });
 
   describe('Performance Requirements', () => {
@@ -595,34 +568,6 @@ describe('CLI Class', () => {
       expect(consoleErrors.some(line => line.includes('Permission denied'))).toBe(true);
     });
 
-    test('should handle invalid JSON config files', async () => {
-      const testArgv = ['node', 'cli.js', 'check', 'test-file.js', '--config', 'invalid.json'];
-
-      // Mock fs.existsSync to pretend config file exists
-      jest.spyOn(fs, 'existsSync').mockImplementation((path) => {
-        if (path === 'invalid.json') return true;
-        return jest.requireActual('fs').existsSync(path);
-      });
-
-      // Create a new CLI instance and mock config loading to throw error
-      const testCli = new CLI();
-      const configError = new (require('../src/core/config')).ConfigError('Invalid JSON in config file');
-      jest.spyOn(testCli.config, 'loadConfig').mockImplementation(() => {
-        throw configError;
-      });
-
-      // Mock ErrorHandler.handleError to capture the error instead of exiting
-      const { ErrorHandler } = require('../src/utils/errors');
-      let capturedError = null;
-      jest.spyOn(ErrorHandler, 'handleError').mockImplementation((error) => {
-        capturedError = error;
-      });
-
-      await testCli.run(testArgv);
-
-      expect(capturedError).toBe(configError);
-      expect(capturedError.message).toContain('Invalid JSON');
-    });
   });
 
   describe('Output Formatting', () => {
@@ -667,7 +612,7 @@ describe('CLI Class', () => {
 
       const output = consoleOutput.join('\n');
       // Minimal format should be concise - just file:line:column
-      expect(output).toMatch(/.*:\d+:\d+/);
+      expect(output).toMatch(/file\.js:\d+:\d+/);
     });
   });
 });

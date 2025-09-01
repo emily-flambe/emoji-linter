@@ -167,7 +167,7 @@ describe('GitHub Action', () => {
       await run();
 
       expect(mockInfo).toHaveBeenCalledWith('Scanning path: .');
-      expect(mockInfo).toHaveBeenCalledWith('Using config: .emoji-linter-config.json');
+      expect(mockInfo).toHaveBeenCalledWith('Using config: .emoji-linter.config.json');
       expect(mockSetFailed).not.toHaveBeenCalled();
     });
   });

@@ -135,7 +135,7 @@ class OutputFormatter {
       if (result.emojis && result.emojis.length > 0) {
         for (const emoji of result.emojis) {
           lines.push(
-            `${result.filePath}:${emoji.lineNumber}:${emoji.columnStart}: ` +
+            `${result.filePath}:${emoji.lineNumber}:${emoji.columnNumber || emoji.columnStart || 0}: ` +
             `${emoji.emoji} (${emoji.type})`
           );
         }
