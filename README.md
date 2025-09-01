@@ -4,15 +4,18 @@ Remove emojis from your codebase. Keep your code professional.
 
 ## How It Works
 
-The emoji-linter scans your codebase for emojis and can either report or remove them. It uses comprehensive Unicode patterns to detect:
+The emoji-linter scans your codebase for Unicode emojis and can either report or remove them.
 
-- **What gets detected**: Unicode emojis (🚀, ✨, 😀) in source code files. Basic support for emoji sequences, but may not fully handle complex combinations with modifiers.
-- **What gets ignored**: Files matching ignore patterns (like `node_modules/`, `dist/`), whitelisted emojis specified in config, and lines with ignore comments
+- **What it detects**: Basic Unicode emojis (🚀, ✨, 😀) in source code files
+- **What it ignores**: Files matching patterns in your config file, whitelisted emojis, and lines with ignore comments
 - **Two modes**: `check` mode reports emojis without modifying files, while `fix` mode removes them from your code
 
-**Note**: This tool focuses on standard Unicode emojis. It does NOT detect shortcodes like `:rocket:` and has limited support for complex emoji sequences with skin tones or flags.
+**⚠️ Limitations**:
+- Does NOT detect emoji shortcodes like `:rocket:` or `:smile:`
+- Limited support for complex emoji sequences (skin tones, flags, combined emojis)
+- May not detect all modern Unicode emoji combinations
 
-The linter respects your configuration file (`.emoji-linter.config.json`) and inline ignore comments, making it flexible for different project needs.
+The linter uses a configuration file (`.emoji-linter.config.json`) for customizing behavior.
 
 ## Quick Start
 
@@ -139,23 +142,10 @@ Create `.emoji-linter.config.json` in your project root to customize behavior. T
          "**/*.min.js",        // Ignore minified files
          "**/*.map"            // Ignore source maps
        ],
-       "emojis": ["✅", "🚀", "⚠️"],  // Whitelist specific emojis
-       "patterns": ["console.log.*🚀"]  // Ignore specific code patterns
-     },
-     "detection": {
-       "unicode": true,      // Detect Unicode emojis (🚀)
-       "shortcodes": true,   // Detect shortcodes (:rocket:)
-       "sequences": true,    // Detect emoji sequences (👨‍💻)
-       "skinTones": true     // Detect skin tone modifiers (👋🏻)
+       "emojis": ["✅", "🚀", "⚠️"]   // Whitelist specific emojis
      },
      "output": {
-       "format": "table",        // Output format: table, json, minimal
-       "showContext": true,      // Show code context around emojis
-       "maxContextLines": 2      // Lines of context to show
-     },
-     "cleanup": {
-       "preserveWhitespace": false,  // Keep spacing after emoji removal
-       "createBackup": false          // Auto-create .bak files
+       "format": "table"         // Output format: table, json, minimal
      }
    }
    ```
@@ -165,17 +155,8 @@ Create `.emoji-linter.config.json` in your project root to customize behavior. T
 | Option | Description | Default | Example |
 |--------|-------------|---------|---------|
 | `ignore.files` | File/directory patterns to skip (glob patterns) | `[]` | `["**/*.md", "docs/**"]` |
-| `ignore.emojis` | Specific emojis to whitelist (never lint) | `[]` | `["✅", "🚀", ":rocket:"]` |
-| `ignore.patterns` | Regex patterns to ignore | `[]` | `["console.log.*🚀"]` |
-| `detection.unicode` | Detect Unicode emojis (🚀) | `true` | `true` |
-| `detection.shortcodes` | Detect shortcode emojis (:rocket:) | `true` | `true` |
-| `detection.sequences` | Detect emoji sequences (👨‍💻) | `true` | `true` |
-| `detection.skinTones` | Detect skin tone modifiers (👋🏻) | `true` | `true` |
+| `ignore.emojis` | Specific emojis to whitelist (never lint) | `[]` | `["✅", "🚀", "⚠️"]` |
 | `output.format` | Output format for CLI | `"table"` | `"json"` |
-| `output.showContext` | Show surrounding code | `true` | `false` |
-| `output.maxContextLines` | Context lines to display | `2` | `5` |
-| `cleanup.preserveWhitespace` | Keep spacing after removal | `false` | `true` |
-| `cleanup.createBackup` | Auto-create backup files | `false` | `true` |
 
 ### Common Configuration Patterns
 
@@ -222,27 +203,25 @@ Create `.emoji-linter.config.json` in your project root to customize behavior. T
 
 ## Ignore Comments
 
-Skip specific lines or files:
+Skip specific lines in files:
 
 ```javascript
-// emoji-linter-ignore-file
-// This entire file will be skipped
-
 function example() {
-  console.log("Debug"); // emoji-linter-ignore-line
+  console.log("Debug 🚀"); // emoji-linter-ignore-line
   
   // emoji-linter-ignore-next-line
-  const status = "Success!";
+  const status = "Success! ✨";
 }
 ```
 
-## What It Detects
+**Note**: File-level ignore comments are not currently supported. Use the `ignore.files` configuration instead.
 
-- Unicode emojis: 🚀 ✨ 😀
-- Shortcodes: :rocket: :sparkles:
-- Sequences: 👨‍💻 🏳️‍🌈
-- Skin tones: 👋🏻 👋🏿
-- Flags: 🇺🇸 🇬🇧
+## What It Actually Detects
+
+- ✅ Basic Unicode emojis: 🚀 ✨ 😀
+- ⚠️ Limited support for emoji sequences: 👨‍💻 (may not catch all)
+- ❌ Does NOT detect shortcodes: `:rocket:` `:sparkles:`
+- ❌ Limited support for skin tones and flags
 
 ## Pre-commit Hook
 
