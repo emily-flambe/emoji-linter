@@ -3,7 +3,7 @@
  * Following test-driven development - tests first, implementation follows
  */
 
-const { findEmojis, removeEmojis, hasEmojis, EMOJI_REGEX } = require('../../src/core/detector');
+const { findEmojis, removeEmojis, hasEmojis, EMOJI_REGEX } = require('../../../src/core/detector');
 
 // Test data for performance tests
 const TEST_DATA = {

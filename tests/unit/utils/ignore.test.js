@@ -4,7 +4,7 @@ const {
   parseIgnoreComments,
   IGNORE_PATTERNS,
   FILE_IGNORE_PATTERNS 
-} = require('../../src/utils/ignore');
+} = require('../../../src/utils/ignore');
 
 describe('Ignore Utils', () => {
   describe('shouldIgnoreLine', () => {

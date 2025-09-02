@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { Config } = require('../../src/core/config');
+const { Config } = require('../../../src/core/config');
 
 describe('Config', () => {
   let tempDir;

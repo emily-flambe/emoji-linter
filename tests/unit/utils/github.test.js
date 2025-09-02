@@ -3,7 +3,7 @@
  */
 
 const github = require('@actions/github');
-const { GitHubUtils } = require('../../src/utils/github');
+const { GitHubUtils } = require('../../../src/utils/github');
 
 // Mock @actions/github
 jest.mock('@actions/github');

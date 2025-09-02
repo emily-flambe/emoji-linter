@@ -6,12 +6,12 @@
 /* eslint-disable no-console */
 
 const fs = require('fs');
-const { CLI } = require('../src/cli');
+const { CLI } = require('../../src/cli');
 const { ValidationError } = require('../src/utils/errors');
-const detector = require('../src/core/detector');
+const detector = require('../../src/core/detector');
 
 // Mock the detector module
-jest.mock('../src/core/detector');
+jest.mock('../../src/core/detector');
 
 // Mock data for testing
 const mockEmojiDetections = [
