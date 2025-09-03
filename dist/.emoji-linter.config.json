@@ -1,0 +1,27 @@
+{
+  "ignore": {
+    "files": [
+      "**/*.md",
+      "docs/**",
+      "test/fixtures/**",
+      "**/node_modules/**",
+      ".git/**",
+      "dist/**",
+      "build/**",
+      "coverage/**",
+      "**/*.min.js",
+      "**/*.map",
+      ".temp/**",
+      ".github/**",
+      "**/.venv/**",
+      "**/venv/**",
+      "**/*.py[co]",
+      "tests/**",
+      ".project/**"
+    ],
+    "emojis": ["🚨", "⚠️"]
+  },
+  "output": {
+    "format": "table"
+  }
+}
