@@ -7,6 +7,14 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
+  coverageThreshold: {
+    global: {
+      lines: 80,
+      statements: 80,
+      branches: 70,
+      functions: 70
+    }
+  },
   testMatch: [
     '<rootDir>/tests/**/*.test.js',
     '<rootDir>/tests/**/*.spec.js'

@@ -11,8 +11,8 @@ const { GitHubUtils } = require('../src/utils/github');
 // Mock dependencies
 jest.mock('@actions/core');
 jest.mock('@actions/github');
-jest.mock('../src/cli');
-jest.mock('../src/utils/github');
+jest.mock('../../src/cli');
+jest.mock('../../src/utils/github');
 
 describe('GitHub Action', () => {
   let mockSetOutput;

@@ -55,3 +55,6 @@ temp/
 # Cache directories
 .cache/
 .parcel-cache/
+
+# Project planning docs
+.project/docs/plans/

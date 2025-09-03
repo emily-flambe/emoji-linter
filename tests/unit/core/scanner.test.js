@@ -4,7 +4,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { FileScanner } = require('../../src/core/scanner');
+const { FileScanner } = require('../../../src/core/scanner');
 
 // Mock fs module
 jest.mock('fs');
