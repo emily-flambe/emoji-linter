@@ -1,5 +1,5 @@
 name: 'Emoji Linter'
-description: 'GitHub Action to validate emoji usage in commits, PRs, and branches with configurable modes'
+description: 'GitHub Action to detect and optionally remove emojis from your codebase'
 author: 'Emily Cogsdill'
 
 branding:
@@ -12,40 +12,20 @@ inputs:
     required: false
     default: '.'
   mode:
-    description: 'Operation mode: "check" (error if emojis found), "fix" (remove emojis)'
+    description: 'Operation mode: "check" (error if emojis found) or "fix" (remove emojis)'
     required: false
     default: 'check'
-  config-file:
-    description: 'Path to emoji-linter configuration file'
-    required: false
-    default: '.emoji-linter.config.json'
-  comment-pr:
-    description: 'Whether to post a comment on pull requests with results'
-    required: false
-    default: 'false'
-  fail-on-error:
-    description: 'Whether to fail the action when emojis violate the specified mode rules'
-    required: false
-    default: 'true'
-  show-files:
-    description: 'Whether to print a list of files containing emojis in the action output'
-    required: false
-    default: 'false'
   github-token:
-    description: 'GitHub token for posting PR comments'
+    description: 'GitHub token for authentication (use default GITHUB_TOKEN)'
     required: false
 
 outputs:
   has-emojis:
     description: 'Whether any emojis were found (true/false)'
   emoji-count:
-    description: 'Total number of emojis found across all files'
+    description: 'Total number of emojis found'
   files-with-emojis:
     description: 'Number of files containing emojis'
-  total-files:
-    description: 'Total number of files scanned'
-  results:
-    description: 'Detailed results in JSON format'
 
 runs:
   using: 'node20'

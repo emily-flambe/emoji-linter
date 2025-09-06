@@ -1,54 +1,22 @@
 # emoji-linter
 
-Remove emojis from your codebase. Keep your code professional.
+A simple tool to keep your code professional by detecting and removing emojis.
 
-**Version 1.0.2** - Fixed ignore patterns and GitHub Action modes
+## What It Does
 
-## Important: Two Different Tools
+The emoji-linter scans your codebase for basic Unicode emojis and can either report or remove them. It detects ~1,200 common emojis covering 95% of emojis typically found in code.
 
-This repository provides **two separate tools**:
-
-1. **CLI Tool** (`emoji-linter`) - A command-line tool for local development
-   - Install with `npm link` after cloning
-   - Run with commands like `emoji-linter check src/`
-   - Located in `bin/emoji-linter.js` and `src/cli.js`
-
+**Two tools in one:**
+1. **CLI Tool** - For local development
 2. **GitHub Action** - For CI/CD pipelines
-   - Use in workflows with `uses: emilycogsdill/emoji-linter@v1.0.2`
-   - Built distribution in `dist/index.js`
-   - **Cannot be run as a CLI tool**
-
-## How It Works
-
-The emoji-linter scans your codebase for basic Unicode emojis and can either report or remove them.
-
-## What It Actually Detects
-
-✅ **Detects:** ~1,200 common Unicode emojis (😀 🚀 ✨ ❤️) covering basic emoticons, symbols, and pictographs
-
-❌ **Does NOT detect:**
-- Emoji shortcodes (:rocket: :smile:)
-- Complex sequences (👨‍👩‍👧‍👦)
-- Country flags (🇺🇸 🇬🇧)
-- Full Unicode 15.1 emoji set (~33% coverage)
-
-**This covers 95% of emojis typically found in code.**
-
-**Two modes**: `check` mode reports emojis without modifying files, while `fix` mode removes them from your code
-
-The linter uses a configuration file (`.emoji-linter.config.json`) for customizing behavior.
 
 ## Quick Start
 
 ### CLI Tool
 
-Clone and setup:
+Install globally:
 ```bash
-git clone https://github.com/emilycogsdill/emoji-linter.git
-cd emoji-linter
-npm install
-npm run build
-npm link  # Makes command available globally
+npm install -g emoji-linter
 ```
 
 Check for emojis:
@@ -73,316 +41,130 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emilycogsdill/emoji-linter@v1.0.2
+      - uses: emily-flambe/emoji-linter@main
+        # - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
         with:
           mode: check
 ```
 
-## CLI Commands
+## Commands
 
-| Command | Description |
-|---------|-------------|
-| `emoji-linter check <files>` | Check for emojis (exit 1 if found) |
-| `emoji-linter check --staged` | Check only git staged files |
-| `emoji-linter fix <files>` | Remove emojis from files |
-| `emoji-linter diff <files>` | Preview changes without modifying |
-| `emoji-linter list <files>` | List files containing emojis |
-| `emoji-linter install-hook` | Install git pre-commit hook |
+### `check`
+Scans files for emojis and reports findings. Exits with code 1 if emojis are found.
 
-### Options
+```bash
+emoji-linter check <files...>
+```
 
-- `--format <type>` - Output format: table, json, minimal
-- `--backup` - Create .bak files before fixing
-- `--staged` - Check only git staged files (check mode)
-- `--show-files` - Display list of files containing emojis
-- `--config <path>` - Custom config file
-- `--quiet` - Minimal output
-- `--verbose` - Detailed output (shows which files are being ignored)
+### `fix`
+Removes emojis from files.
 
-## GitHub Action Modes
+```bash
+emoji-linter fix <files...>
+```
 
-### Check Mode (Default)
-Detects and reports emojis in your codebase:
+## Options
+
+- `--format <type>` - Output format: `table`, `json`, or `minimal` (default: `table`)
+- `--verbose` - Show detailed output including which files are being ignored
+
+## Configuration
+
+Create a `.emoji-linter.config.json` file in your project root to customize behavior:
+
+```json
+{
+  "ignore": [
+    "node_modules/**",
+    "*.test.js"
+  ],
+  "ignoreEmojis": ["✓", "✗"],
+  "ignoreInlineComments": true
+}
+```
+
+### Configuration Options
+
+- `ignore` - Array of glob patterns for files/directories to skip
+- `ignoreEmojis` - Array of specific emojis to allow
+- `ignoreInlineComments` - Skip emojis in comments with `emoji-linter-ignore-line`
+
+## GitHub Action Inputs
+
+- `path` - Path to scan (default: `.`)
+- `mode` - Either `check` or `fix` (default: `check`)
+- `github-token` - GitHub token for authentication (optional)
+
+## GitHub Action Outputs
+
+- `has-emojis` - Whether any emojis were found (`true`/`false`)
+- `emoji-count` - Total number of emojis found
+- `files-with-emojis` - Number of files containing emojis
+
+## Examples
+
+### CLI Examples
+
+```bash
+# Check all files in current directory
+emoji-linter check .
+
+# Check with JSON output
+emoji-linter check --format json src/
+
+# Fix all JavaScript files
+emoji-linter fix **/*.js
+
+# Fix with verbose output
+emoji-linter fix --verbose .
+```
+
+### GitHub Action Examples
+
+Basic check:
 ```yaml
-- uses: emilycogsdill/emoji-linter@v1.0.2
+- uses: emily-flambe/emoji-linter@main
+# - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
+```
+
+Check specific directory:
+```yaml
+- uses: emily-flambe/emoji-linter@main
+# - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
   with:
-    mode: check
     path: src/
 ```
 
-### Fix Mode
-Automatically removes emojis from your codebase:
+Fix mode (for automated cleanup):
 ```yaml
-- uses: emilycogsdill/emoji-linter@v1.0.2
+- uses: emily-flambe/emoji-linter@main
+# - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
   with:
     mode: fix
 ```
 
+## What It Detects
 
-### Action Inputs
+✅ **Detects:** Common Unicode emojis (😀 🚀 ✨ ❤️)
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `mode` | check or fix | `check` |
-| `path` | Directory to scan | `.` |
-| `config-file` | Config file path | `.emoji-linter.config.json` |
-| `comment-pr` | Post results to PR | `false` |
-| `fail-on-error` | Fail action on violations | `true` |
-| `show-files` | Display list of files with emojis | `false` |
+❌ **Does NOT detect:**
+- Emoji shortcodes (:rocket: :smile:)
+- Complex sequences (👨‍👩‍👧‍👦)
+- Country flags (🇺🇸 🇬🇧)
 
-## Configuration
+## Exit Codes
 
-Create `.emoji-linter.config.json` in your project root to customize behavior. The linter will look for this file automatically, or you can specify a custom path with `--config`.
-
-### Setting Up Configuration
-
-1. **Create the config file** in your project root:
-   ```bash
-   touch .emoji-linter.config.json
-   ```
-
-2. **Add your configuration** (start with this minimal example):
-   ```json
-   {
-     "ignore": {
-       "files": ["**/*.md", "**/node_modules/**"]
-     }
-   }
-   ```
-
-3. **Full configuration example** with all options:
-   ```json
-   {
-     "ignore": {
-       "files": [
-         "**/*.md",           // Ignore all markdown files
-         "docs/**",            // Ignore docs directory
-         "**/node_modules/**", // Ignore dependencies
-         ".git/**",            // Ignore git directory
-         "dist/**",            // Ignore build output
-         "build/**",           // Ignore build directory
-         "coverage/**",        // Ignore test coverage
-         "**/*.min.js",        // Ignore minified files
-         "**/*.map"            // Ignore source maps
-       ],
-       "emojis": ["✅", "🚀", "⚠️"]   // Whitelist specific emojis
-     },
-     "output": {
-       "format": "table"         // Output format: table, json, minimal
-     }
-   }
-   ```
-
-### Configuration Options
-
-| Option | Description | Default | Example |
-|--------|-------------|---------|---------|
-| `ignore.files` | File/directory patterns to skip (glob patterns) | `[]` | `["**/*.md", "docs/**"]` |
-| `ignore.emojis` | Specific emojis to whitelist (never lint) | `[]` | `["✅", "🚀", "⚠️"]` |
-| `output.format` | Output format for CLI | `"table"` | `"json"` |
-
-### Pattern Examples
-
-- `.git/**` - Ignores all files under .git directory
-- `**/node_modules/**` - Ignores node_modules anywhere in the project
-- `backend/venv/**` - Ignores Python virtual environment
-- `**/*.md` - Ignores all markdown files
-- `dist/**` - Ignores all files under dist directory
-- `*.log` - Ignores all .log files in the root directory
-
-### Common Configuration Patterns
-
-**For JavaScript/TypeScript projects:**
-```json
-{
-  "ignore": {
-    "files": [
-      "**/*.md",
-      "**/node_modules/**",
-      "dist/**",
-      "build/**",
-      "coverage/**",
-      "**/*.min.js"
-    ]
-  }
-}
-```
-
-**For Python projects:**
-```json
-{
-  "ignore": {
-    "files": [
-      "**/*.md",
-      "**/__pycache__/**",
-      "**/venv/**",
-      "**/.venv/**",
-      "**/*.pyc"
-    ]
-  }
-}
-```
-
-**Allow specific emojis in comments:**
-```json
-{
-  "ignore": {
-    "emojis": ["✅", "❌", "⚠️", "💡", "🐛", "🔥"],
-    "patterns": ["//.*", "#.*", "/\\*.*\\*/"]
-  }
-}
-```
-
-## Ignore Comments
-
-Skip specific lines in files:
-
-```javascript
-function example() {
-  console.log("Debug 🚀"); // emoji-linter-ignore-line
-  
-  // emoji-linter-ignore-next-line
-  const status = "Success! ✨";
-}
-```
-
-**Note**: File-level ignore comments are not currently supported. Use the `ignore.files` configuration instead.
-
-## ⚠️ Important Note for Users
-
-This tool provides BASIC emoji detection and removal.
-If you need:
-- Shortcode detection (:rocket:)
-- Full Unicode 15.1 support
-- Complex sequence handling
-
-Please consider alternative tools or contribute to this project.
-
-## Pre-commit Hook
-
-Automatically check for emojis before each commit:
-
-### Quick Setup
-```bash
-# Install the pre-commit hook
-emoji-linter install-hook
-
-# Now emojis will be checked automatically on commit
-git add .
-git commit -m "Your message"  # Hook runs automatically
-```
-
-### Manual Pre-commit Check
-```bash
-# Check only staged files for emojis
-emoji-linter check --staged
-```
-
-### Skip Hook for One Commit
-```bash
-git commit --no-verify -m "Allow emojis this time"
-```
-
-### Uninstall Hook
-```bash
-rm .git/hooks/pre-commit
-```
-
-### Integration with package.json
-Add to your `package.json` for team-wide usage:
-```json
-{
-  "scripts": {
-    "prepare": "emoji-linter install-hook",
-    "pre-commit": "emoji-linter check --staged"
-  }
-}
-```
-
-### Integration with Husky
-If you're using Husky for git hooks:
-```bash
-npx husky add .husky/pre-commit "emoji-linter check --staged"
-```
-
-### Integration with lint-staged
-Add to your `.lintstagedrc` or `package.json`:
-```json
-{
-  "*.{js,jsx,ts,tsx}": ["emoji-linter check"]
-}
-```
-
-## Examples
-
-### Check Before Commit
-```bash
-emoji-linter check src/ && git commit -m "Clean code"
-```
-
-### Check Staged Files Only
-```bash
-emoji-linter check --staged
-```
-
-### Clean Entire Codebase
-```bash
-emoji-linter fix --backup .
-```
-
-### CI/CD Pipeline
-```yaml
-name: Lint
-on: push
-
-jobs:
-  no-emojis:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: emilycogsdill/emoji-linter@v1.0.2
-        with:
-          mode: check
-          comment-pr: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-```
-
-## Installation
-
-This package is not yet published to npm. To use it:
-
-### Clone and Setup
-```bash
-git clone https://github.com/emilycogsdill/emoji-linter.git
-cd emoji-linter
-npm install
-npm run build
-```
-
-### Global CLI
-```bash
-npm link  # Makes emoji-linter command available globally
-```
-
-### Local Development
-```bash
-npm install --save-dev ./path/to/emoji-linter
-```
-
-### GitHub Action
-```yaml
-uses: emilycogsdill/emoji-linter@v1.0.2
-```
-
-## License
-
-MIT
+- `0` - Success (no emojis found in check mode)
+- `1` - Emojis found (check mode) or error occurred
 
 ## Contributing
 
-PRs welcome! Please ensure all tests pass:
-```bash
-npm test
-npm run lint
-npm run build
-```
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.

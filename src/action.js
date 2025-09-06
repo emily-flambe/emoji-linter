@@ -1,12 +1,10 @@
 /**
  * GitHub Action entry point for emoji-linter
- * Uses CLI implementation internally with GitHub-specific functionality
+ * Simplified interface with only check and fix modes
  */
 
 const core = require('@actions/core');
-const github = require('@actions/github');
 const { CLI } = require('./cli');
-const { GitHubUtils } = require('./utils/github');
 
 /**
  * Main GitHub Action execution function
@@ -16,38 +14,27 @@ async function run() {
     // Get action inputs
     const inputs = {
       path: core.getInput('path') || '.',
-      mode: core.getInput('mode') || 'check',
-      configFile: core.getInput('config-file') || '.emoji-linter.config.json',
-      commentPR: core.getInput('comment-pr') === 'true',
-      failOnError: core.getInput('fail-on-error') === 'true',
-      showFiles: core.getInput('show-files') === 'true'
+      mode: core.getInput('mode') || 'check'
     };
 
     core.info('Emoji Linter GitHub Action starting...');
-    core.info(`Current working directory: ${process.cwd()}`);
     core.info(`Scanning path: ${inputs.path}`);
-    core.info(`Using config: ${inputs.configFile}`);
     core.info(`Mode: ${inputs.mode}`);
-    core.info(`Show files: ${inputs.showFiles}`);
 
-    // Validate inputs
-    try {
-      GitHubUtils.validateInputs(inputs);
-    } catch (validationError) {
-      core.setFailed(validationError.message);
+    // Validate mode
+    if (!['check', 'fix'].includes(inputs.mode)) {
+      core.setFailed(`Invalid mode: ${inputs.mode}. Must be "check" or "fix"`);
       return;
     }
 
-    // Create CLI instance with the config file path
-    core.info(`Creating CLI with config file: ${inputs.configFile}`);
-    const cli = new CLI(inputs.configFile);
+    // Create CLI instance
+    const cli = new CLI();
     let results;
 
     try {
-      // Mode directly maps to CLI command: 'check' or 'fix'
+      // Run CLI in JSON format for structured output
       results = await cli.runAndGetResults([inputs.mode, inputs.path], {
-        format: 'json',
-        quiet: true
+        format: 'json'
       });
     } catch (cliError) {
       core.setFailed(`Action failed: ${cliError.message}`);
@@ -65,61 +52,18 @@ async function run() {
     core.setOutput('has-emojis', hasEmojis.toString());
     core.setOutput('emoji-count', results.summary.totalEmojis.toString());
     core.setOutput('files-with-emojis', results.summary.filesWithEmojis.toString());
-    core.setOutput('total-files', results.summary.totalFiles.toString());
-    core.setOutput('results', JSON.stringify(results.results));
 
     // Log summary
     core.info(`Scanned ${results.summary.totalFiles} files`);
     core.info(`Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files`);
-    
-    // Show files with emojis if requested
-    if (inputs.showFiles && results.summary.filesWithEmojis > 0) {
-      core.info('');
-      core.info('Files containing emojis:');
-      const filesWithEmojis = results.results.filter(result => 
-        result.emojis && result.emojis.length > 0
-      );
-      filesWithEmojis.forEach(file => {
-        core.info(`  ${file.filePath} (${file.emojis.length} emoji${file.emojis.length > 1 ? 's' : ''})`);
-      });
-      core.info('');
-    }
-
-    // Post PR comment if requested and applicable
-    if (inputs.commentPR && GitHubUtils.isPullRequest(github.context)) {
-      try {
-        const prNumber = GitHubUtils.getPRNumber(github.context);
-        if (prNumber) {
-          const token = core.getInput('github-token') || process.env.GITHUB_TOKEN;
-          if (token && token.trim() !== '') {
-            const githubUtils = new GitHubUtils(token);
-            const report = GitHubUtils.formatEmojiReport(results.results, results.summary, inputs.mode);
-            
-            await githubUtils.postPRComment(prNumber, report);
-            core.info(`Posted PR comment to #${prNumber}`);
-          } else {
-            core.warning('GitHub token not provided, cannot post PR comment');
-          }
-        }
-      } catch (commentError) {
-        // Log error but don't fail the action for comment issues
-        core.error(`Failed to post PR comment: ${commentError.message}`);
-      }
-    }
 
     // Determine if action should fail based on mode and results
-    if (inputs.mode === 'check' && hasEmojis && inputs.failOnError) {
-      const failureMessage = `Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files. Mode: check - emojis are not allowed.`;
+    if (inputs.mode === 'check' && hasEmojis) {
+      const failureMessage = `Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files. Emojis are not allowed.`;
       core.setFailed(failureMessage);
       return;
     }
     
-    // For 'fix' mode, check if the operation actually succeeded
-    if (inputs.mode === 'fix' && !results.success) {
-      core.setFailed(`Failed to fix emojis: ${results.error || 'Unknown error'}`);
-      return;
-    }
-
     // Log success message
     switch (inputs.mode) {
     case 'check':
@@ -130,8 +74,8 @@ async function run() {
       }
       break;
     case 'fix':
-      if (results.summary && results.summary.fixedFiles > 0) {
-        core.info(`Fixed ${results.summary.fixedFiles} files, removed ${results.summary.totalEmojis} emojis`);
+      if (results.summary.filesFixed && results.summary.filesFixed > 0) {
+        core.info(`Removed ${results.summary.emojisRemoved} emojis from ${results.summary.filesFixed} files`);
       } else if (hasEmojis) {
         core.warning(`Found ${results.summary.totalEmojis} emojis but no files were modified`);
       } else {
