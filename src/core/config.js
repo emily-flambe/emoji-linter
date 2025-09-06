@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const { minimatch } = require('minimatch');
+const ignore = require('ignore');
 
 const DEFAULT_CONFIG = {
   ignore: {
@@ -30,6 +31,14 @@ const DEFAULT_CONFIG = {
 class Config {
   constructor(configPath) {
     this.config = this.loadConfig(configPath);
+    // Initialize the ignore instance with patterns
+    this.ig = ignore();
+    if (this.config.ignore?.files) {
+      if (process.env.DEBUG_IGNORE) {
+        console.log('Loading ignore patterns:', this.config.ignore.files);
+      }
+      this.ig.add(this.config.ignore.files);
+    }
   }
 
   /**
@@ -42,12 +51,23 @@ class Config {
       configPath = path.join(process.cwd(), '.emoji-linter.config.json');
     }
 
+    if (process.env.DEBUG_IGNORE || process.env.DEBUG_CONFIG) {
+      console.log('Looking for config at:', configPath);
+    }
+
     if (!fs.existsSync(configPath)) {
+      if (process.env.DEBUG_CONFIG || process.env.DEBUG_IGNORE) {
+        console.log('Config file not found:', configPath);
+      }
       return DEFAULT_CONFIG;
     }
 
     try {
       const userConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (process.env.DEBUG_CONFIG || process.env.DEBUG_IGNORE) {
+        console.log('Loaded config from:', configPath);
+        console.log('Ignore patterns:', userConfig.ignore?.files?.length || 0);
+      }
       return {
         ignore: { ...DEFAULT_CONFIG.ignore, ...userConfig.ignore },
         output: { ...DEFAULT_CONFIG.output, ...userConfig.output }
@@ -64,13 +84,50 @@ class Config {
    * @returns {boolean} True if file should be ignored
    */
   shouldIgnoreFile(filePath, content) {
-    const patterns = this.config.ignore?.files || [];
-    const normalized = filePath.replace(/\\/g, '/');
+    // Normalize path: remove leading ./ and convert backslashes
+    let normalized = filePath.replace(/\\/g, '/');
+    if (normalized.startsWith('./')) {
+      normalized = normalized.slice(2);
+    }
     
-    return patterns.some(pattern => {
-      // Use minimatch for proper glob pattern matching
-      return minimatch(normalized, pattern, { matchBase: false });
-    });
+    // Use ignore package for gitignore-style matching
+    return this.ig.ignores(normalized);
+  }
+  
+  /**
+   * Check if directory should be ignored (not traversed)
+   * @param {string} dirPath - Directory path to check
+   * @returns {boolean} True if directory should be skipped
+   */
+  shouldIgnoreDirectory(dirPath) {
+    // Normalize path
+    let normalized = dirPath.replace(/\\/g, '/');
+    if (normalized.startsWith('./')) {
+      normalized = normalized.slice(2);
+    }
+    
+    if (process.env.DEBUG_IGNORE) {
+      console.log(`Checking directory: ${normalized}`);
+    }
+    
+    // Check if the directory itself should be ignored
+    if (this.ig.ignores(normalized)) {
+      if (process.env.DEBUG_IGNORE) {
+        console.log(`  → Directory ignored by exact match`);
+      }
+      return true;
+    }
+    
+    // Check if all files in this directory would be ignored
+    // This handles patterns like "node_modules/**" 
+    const testFile = normalized + '/test.file';
+    const result = this.ig.ignores(testFile);
+    
+    if (process.env.DEBUG_IGNORE) {
+      console.log(`  → Test file ${testFile}: ${result ? 'ignored' : 'not ignored'}`);
+    }
+    
+    return result;
   }
 
   /**

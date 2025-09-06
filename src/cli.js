@@ -26,11 +26,11 @@ const { isDirectory } = require('./utils/files');
 class CLI {
   /**
    * Creates a new CLI instance
-   * @param {Object} [customConfig] - Custom configuration options
+   * @param {string} [configPath] - Path to configuration file
    */
-  constructor(customConfig = {}) {
-    this.config = new Config(customConfig);
-    this.scanner = new FileScanner();
+  constructor(configPath = null) {
+    this.config = new Config(configPath);
+    this.scanner = new FileScanner(this.config);
     this.formatter = new OutputFormatter();
   }
 
@@ -192,8 +192,9 @@ class CLI {
       // Load custom config if specified
       if (parsed.options.config) {
         // Create a new config with the custom config file
-        this.config = new Config();
-        this.config.loadConfig(parsed.options.config);
+        this.config = new Config(parsed.options.config);
+        // Update scanner with new config
+        this.scanner = new FileScanner(this.config);
       }
 
       // Update formatter options
@@ -805,12 +806,12 @@ exit $?
 emoji-linter - Remove basic Unicode emojis from your code
 
 WHAT IT DETECTS:
-  - Common Unicode emojis (😀 ✨ 🚀)
+  - Common Unicode emojis (see README for examples)
   - Basic emoji ranges (see README for specifics)
   
 WHAT IT DOESN'T DETECT:
   - Emoji shortcodes (:rocket: :smile:)
-  - Complex sequences (👨‍👩‍👧‍👦)
+  - Complex sequences (multi-character emojis)
   - Full Unicode 15.1 emoji set
 
 Usage:
@@ -939,8 +940,9 @@ Exit Codes:
       // Load custom config if specified
       if (parsed.options.config) {
         // Create a new config with the custom config file
-        this.config = new Config();
-        this.config.loadConfig(parsed.options.config);
+        this.config = new Config(parsed.options.config);
+        // Update scanner with new config
+        this.scanner = new FileScanner(this.config);
       }
 
       // Update formatter options
