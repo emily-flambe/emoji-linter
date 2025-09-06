@@ -29943,7 +29943,7 @@ async function run() {
     // Get action inputs
     const inputs = {
       path: core.getInput('path') || '.',
-      mode: core.getInput('mode') || 'clean',
+      mode: core.getInput('mode') || 'check',
       configFile: core.getInput('config-file') || '.emoji-linter.config.json',
       commentPR: core.getInput('comment-pr') === 'true',
       failOnError: core.getInput('fail-on-error') === 'true'
@@ -29967,15 +29967,8 @@ async function run() {
     let results;
 
     try {
-      // Map GitHub Action modes to CLI commands
-      const modeToCommand = {
-        'clean': 'check',
-        'forbid': 'check'
-        // Future modes could map to 'fix', 'diff', etc.
-      };
-      
-      const cliCommand = modeToCommand[inputs.mode] || 'check';
-      results = await cli.runAndGetResults([cliCommand, inputs.path], {
+      // Mode directly maps to CLI command: 'check' or 'fix'
+      results = await cli.runAndGetResults([inputs.mode, inputs.path], {
         config: inputs.configFile,
         format: 'json',
         quiet: true
@@ -30026,45 +30019,27 @@ async function run() {
     }
 
     // Determine if action should fail based on mode and results
-    let shouldFail = false;
-    let failureMessage = '';
-
-    if (inputs.failOnError) {
-      switch (inputs.mode) {
-      case 'clean':
-        if (hasEmojis) {
-          shouldFail = true;
-          failureMessage = `Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files. Mode: clean - emojis should be removed.`;
-        }
-        break;
-      case 'forbid':
-        if (hasEmojis) {
-          shouldFail = true;
-          failureMessage = `Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files. Mode: forbid - emojis are not allowed.`;
-        }
-        break;
-      }
-    }
-
-    if (shouldFail) {
+    if (inputs.mode === 'check' && hasEmojis && inputs.failOnError) {
+      const failureMessage = `Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files. Mode: check - emojis are not allowed.`;
       core.setFailed(failureMessage);
       return;
     }
+    // Note: 'fix' mode never fails - it just removes emojis
 
     // Log success message
     switch (inputs.mode) {
-    case 'clean':
+    case 'check':
       if (hasEmojis) {
-        core.warning(`Found ${results.summary.totalEmojis} emojis that could be cleaned up`);
+        core.warning(`Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files`);
       } else {
-        core.info('No emojis found - codebase is clean');
+        core.info('No emojis found - validation passed');
       }
       break;
-    case 'forbid':
+    case 'fix':
       if (hasEmojis) {
-        core.warning(`Found ${results.summary.totalEmojis} forbidden emojis`);
+        core.info(`Removed ${results.summary.totalEmojis} emojis from ${results.summary.filesWithEmojis} files`);
       } else {
-        core.info('No forbidden emojis found - validation passed');
+        core.info('No emojis found to remove');
       }
       break;
     }

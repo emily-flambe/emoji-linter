@@ -12,9 +12,9 @@ inputs:
     required: false
     default: '.'
   mode:
-    description: 'Validation mode: "clean" (detect emojis for cleanup), "forbid" (ensure no emojis exist)'
+    description: 'Operation mode: "check" (error if emojis found), "fix" (remove emojis)'
     required: false
-    default: 'clean'
+    default: 'check'
   config-file:
     description: 'Path to emoji-linter configuration file'
     required: false
