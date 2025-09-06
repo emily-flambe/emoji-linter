@@ -31236,7 +31236,7 @@ class CLI {
         // Handle long options
         const optionName = arg.slice(2);
         
-        if (['help', 'version', 'verbose', 'quiet', 'backup', 'dry-run', 'staged'].includes(optionName)) {
+        if (['help', 'version', 'verbose', 'quiet', 'backup', 'dry-run', 'staged', 'show-files'].includes(optionName)) {
           // Boolean flags
           parsed.options[this.camelCase(optionName)] = true;
         } else if (['format', 'config', 'output', 'encoding'].includes(optionName)) {
@@ -31583,6 +31583,17 @@ class CLI {
       
       if (!options.quiet) {
         console.log(output);
+      }
+
+      // Show files with emojis if requested
+      if (options.showFiles && summary.filesWithEmojis > 0) {
+        console.log('\nFiles containing emojis:');
+        const filesWithEmojis = results.filter(result => 
+          result.emojis && result.emojis.length > 0
+        );
+        filesWithEmojis.forEach(file => {
+          console.log(`  ${file.filePath} (${file.emojis.length} emoji${file.emojis.length > 1 ? 's' : ''})`);
+        });
       }
 
       // Show performance info in verbose mode
@@ -31986,6 +31997,7 @@ Options:
   --config <path>      Path to configuration file
   --backup, -b         Create backup files before fixing (fix mode only)
   --staged             Check only git staged files (check mode)
+  --show-files         Display list of files containing emojis
   --dry-run           Show what would be done without making changes
   --verbose, -v        Show verbose output
   --quiet, -q          Suppress non-essential output
@@ -31995,6 +32007,7 @@ Options:
 Examples:
   emoji-linter check src/                    # Check all files in src/
   emoji-linter check --staged                # Check only staged files
+  emoji-linter check --show-files src/       # Check and list files with emojis
   emoji-linter fix --backup src/*.js         # Fix JS files with backup
   emoji-linter diff --format json src/       # Show diff in JSON format
   emoji-linter list --format minimal src/    # List files with minimal output

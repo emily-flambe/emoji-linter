@@ -94,6 +94,7 @@ jobs:
 - `--format <type>` - Output format: table, json, minimal
 - `--backup` - Create .bak files before fixing
 - `--staged` - Check only git staged files (check mode)
+- `--show-files` - Display list of files containing emojis
 - `--config <path>` - Custom config file
 - `--quiet` - Minimal output
 - `--verbose` - Detailed output (shows which files are being ignored)
@@ -127,6 +128,7 @@ Automatically removes emojis from your codebase:
 | `config-file` | Config file path | `.emoji-linter.config.json` |
 | `comment-pr` | Post results to PR | `false` |
 | `fail-on-error` | Fail action on violations | `true` |
+| `show-files` | Display list of files with emojis | `false` |
 
 ## Configuration
 
