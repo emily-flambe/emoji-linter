@@ -26,11 +26,11 @@ const { isDirectory } = require('./utils/files');
 class CLI {
   /**
    * Creates a new CLI instance
-   * @param {Object} [customConfig] - Custom configuration options
+   * @param {string} [configPath] - Path to configuration file
    */
-  constructor(customConfig = {}) {
-    this.config = new Config(customConfig);
-    this.scanner = new FileScanner();
+  constructor(configPath = null) {
+    this.config = new Config(configPath);
+    this.scanner = new FileScanner(this.config);
     this.formatter = new OutputFormatter();
   }
 
@@ -79,7 +79,7 @@ class CLI {
         // Handle long options
         const optionName = arg.slice(2);
         
-        if (['help', 'version', 'verbose', 'quiet', 'backup', 'dry-run', 'staged'].includes(optionName)) {
+        if (['help', 'version', 'verbose', 'quiet', 'backup', 'dry-run', 'staged', 'show-files'].includes(optionName)) {
           // Boolean flags
           parsed.options[this.camelCase(optionName)] = true;
         } else if (['format', 'config', 'output', 'encoding'].includes(optionName)) {
@@ -192,8 +192,9 @@ class CLI {
       // Load custom config if specified
       if (parsed.options.config) {
         // Create a new config with the custom config file
-        this.config = new Config();
-        this.config.loadConfig(parsed.options.config);
+        this.config = new Config(parsed.options.config);
+        // Update scanner with new config
+        this.scanner = new FileScanner(this.config);
       }
 
       // Update formatter options
@@ -425,6 +426,17 @@ class CLI {
       
       if (!options.quiet) {
         console.log(output);
+      }
+
+      // Show files with emojis if requested
+      if (options.showFiles && summary.filesWithEmojis > 0) {
+        console.log('\nFiles containing emojis:');
+        const filesWithEmojis = results.filter(result => 
+          result.emojis && result.emojis.length > 0
+        );
+        filesWithEmojis.forEach(file => {
+          console.log(`  ${file.filePath} (${file.emojis.length} emoji${file.emojis.length > 1 ? 's' : ''})`);
+        });
       }
 
       // Show performance info in verbose mode
@@ -805,12 +817,12 @@ exit $?
 emoji-linter - Remove basic Unicode emojis from your code
 
 WHAT IT DETECTS:
-  - Common Unicode emojis (😀 ✨ 🚀)
+  - Common Unicode emojis (see README for examples)
   - Basic emoji ranges (see README for specifics)
   
 WHAT IT DOESN'T DETECT:
   - Emoji shortcodes (:rocket: :smile:)
-  - Complex sequences (👨‍👩‍👧‍👦)
+  - Complex sequences (multi-character emojis)
   - Full Unicode 15.1 emoji set
 
 Usage:
@@ -828,6 +840,7 @@ Options:
   --config <path>      Path to configuration file
   --backup, -b         Create backup files before fixing (fix mode only)
   --staged             Check only git staged files (check mode)
+  --show-files         Display list of files containing emojis
   --dry-run           Show what would be done without making changes
   --verbose, -v        Show verbose output
   --quiet, -q          Suppress non-essential output
@@ -837,6 +850,7 @@ Options:
 Examples:
   emoji-linter check src/                    # Check all files in src/
   emoji-linter check --staged                # Check only staged files
+  emoji-linter check --show-files src/       # Check and list files with emojis
   emoji-linter fix --backup src/*.js         # Fix JS files with backup
   emoji-linter diff --format json src/       # Show diff in JSON format
   emoji-linter list --format minimal src/    # List files with minimal output
@@ -939,8 +953,9 @@ Exit Codes:
       // Load custom config if specified
       if (parsed.options.config) {
         // Create a new config with the custom config file
-        this.config = new Config();
-        this.config.loadConfig(parsed.options.config);
+        this.config = new Config(parsed.options.config);
+        // Update scanner with new config
+        this.scanner = new FileScanner(this.config);
       }
 
       // Update formatter options

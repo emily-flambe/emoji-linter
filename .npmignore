@@ -1,0 +1,45 @@
+# Development and testing
+tests/
+coverage/
+.github/
+.project/
+*.test.js
+*.spec.js
+jest.config.js
+.eslintrc.js
+.eslintignore
+
+# Source control
+.git/
+.gitignore
+
+# Build and config files
+.emoji-linter.config.json
+examples/
+docs/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Logs and temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tmp/
+temp/
+
+# GitHub Action specific files (users install via marketplace, not npm)
+action.yml
+dist/
+
+# Keep only the essentials:
+# - bin/ (CLI executable)
+# - src/ (source code)
+# - package.json
+# - README.md
+# - LICENSE

@@ -65,7 +65,7 @@ class GitHubUtils {
    * Formats emoji linter results into a GitHub-friendly report
    * @param {Array} results - Array of file scan results
    * @param {Object} summary - Summary statistics
-   * @param {string} mode - Linter mode (clean, require, forbid)
+   * @param {string} mode - Linter mode (check, fix)
    * @returns {string} Formatted markdown report
    */
   static formatEmojiReport(results, summary, mode) {
@@ -80,18 +80,18 @@ class GitHubUtils {
     let message = '';
 
     switch (mode) {
-    case 'clean':
-      statusIcon = hasEmojis ? '❌' : '✅';
-      status = hasEmojis ? 'Emojis found' : 'No emojis found';
-      if (hasEmojis) {
-        message = 'Found emojis that should be cleaned up.';
-      }
-      break;
-    case 'forbid':
+    case 'check':
       statusIcon = hasEmojis ? '❌' : '✅';
       status = hasEmojis ? 'Emojis found' : 'No emojis found';
       if (hasEmojis) {
         message = 'Found emojis that are not allowed.';
+      }
+      break;
+    case 'fix':
+      statusIcon = hasEmojis ? '🔧' : '✅';
+      status = hasEmojis ? 'Emojis removed' : 'No emojis found';
+      if (hasEmojis) {
+        message = 'Found and removed emojis from the codebase.';
       }
       break;
     default:
@@ -161,7 +161,7 @@ class GitHubUtils {
     const { mode, path, configFile } = inputs;
 
     // Validate mode
-    const validModes = ['clean', 'forbid'];
+    const validModes = ['check', 'fix'];
     if (!validModes.includes(mode)) {
       throw new Error(`Invalid mode: ${mode}. Valid modes: ${validModes.join(', ')}`);
     }

@@ -9,6 +9,13 @@ const path = require('path');
  * File scanner class
  */
 class FileScanner {
+  constructor(config = null) {
+    this.config = config;
+    if (process.env.DEBUG_IGNORE && this.config) {
+      console.log('Scanner initialized with config:', this.config.config.ignore?.files?.length || 0, 'ignore patterns');
+    }
+  }
+
   /**
    * Scan files for processing
    * @param {Array} files - Array of file paths
@@ -56,21 +63,33 @@ class FileScanner {
    * @param {string} dir - Directory path
    * @returns {Array} Array of file paths
    */
-  getFilesRecursive(dir) {
+  getFilesRecursive(dir, depth = 0) {
     const files = [];
     
     try {
       const items = fs.readdirSync(dir);
       
       for (const item of items) {
-        const fullPath = path.join(dir, item);
+        let fullPath = path.join(dir, item);
         
         try {
           const stat = fs.statSync(fullPath);
           
           if (stat.isDirectory()) {
-            files.push(...this.getFilesRecursive(fullPath));
+            // Check if this directory should be skipped using config
+            if (this.config && this.config.shouldIgnoreDirectory(fullPath)) {
+              if (process.env.DEBUG_IGNORE) {
+                console.log(`Skipping directory: ${fullPath}`);
+              }
+              continue;
+            }
+            
+            files.push(...this.getFilesRecursive(fullPath, depth + 1));
           } else if (stat.isFile()) {
+            // Skip files that match ignore patterns
+            if (this.config && this.config.shouldIgnoreFile(fullPath)) {
+              continue;
+            }
             files.push(fullPath);
           }
         } catch (error) {

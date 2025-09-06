@@ -2,6 +2,22 @@
 
 Remove emojis from your codebase. Keep your code professional.
 
+**Version 1.0.2** - Fixed ignore patterns and GitHub Action modes
+
+## Important: Two Different Tools
+
+This repository provides **two separate tools**:
+
+1. **CLI Tool** (`emoji-linter`) - A command-line tool for local development
+   - Install with `npm link` after cloning
+   - Run with commands like `emoji-linter check src/`
+   - Located in `bin/emoji-linter.js` and `src/cli.js`
+
+2. **GitHub Action** - For CI/CD pipelines
+   - Use in workflows with `uses: emilycogsdill/emoji-linter@v1.0.2`
+   - Built distribution in `dist/index.js`
+   - **Cannot be run as a CLI tool**
+
 ## How It Works
 
 The emoji-linter scans your codebase for basic Unicode emojis and can either report or remove them.
@@ -57,9 +73,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emily-flambe/emoji-linter@v1
+      - uses: emilycogsdill/emoji-linter@v1.0.2
         with:
-          mode: clean
+          mode: check
 ```
 
 ## CLI Commands
@@ -78,27 +94,28 @@ jobs:
 - `--format <type>` - Output format: table, json, minimal
 - `--backup` - Create .bak files before fixing
 - `--staged` - Check only git staged files (check mode)
+- `--show-files` - Display list of files containing emojis
 - `--config <path>` - Custom config file
 - `--quiet` - Minimal output
-- `--verbose` - Detailed output
+- `--verbose` - Detailed output (shows which files are being ignored)
 
 ## GitHub Action Modes
 
-### Clean Mode (Default)
-Detects emojis in your codebase for cleanup:
+### Check Mode (Default)
+Detects and reports emojis in your codebase:
 ```yaml
-- uses: emily-flambe/emoji-linter@v1
+- uses: emilycogsdill/emoji-linter@v1.0.2
   with:
-    mode: clean
+    mode: check
     path: src/
 ```
 
-### Forbid Mode
-Fails if any emojis are found:
+### Fix Mode
+Automatically removes emojis from your codebase:
 ```yaml
-- uses: emily-flambe/emoji-linter@v1
+- uses: emilycogsdill/emoji-linter@v1.0.2
   with:
-    mode: forbid
+    mode: fix
 ```
 
 
@@ -106,11 +123,12 @@ Fails if any emojis are found:
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `mode` | clean or forbid | `clean` |
+| `mode` | check or fix | `check` |
 | `path` | Directory to scan | `.` |
 | `config-file` | Config file path | `.emoji-linter.config.json` |
 | `comment-pr` | Post results to PR | `false` |
 | `fail-on-error` | Fail action on violations | `true` |
+| `show-files` | Display list of files with emojis | `false` |
 
 ## Configuration
 
@@ -162,6 +180,15 @@ Create `.emoji-linter.config.json` in your project root to customize behavior. T
 | `ignore.files` | File/directory patterns to skip (glob patterns) | `[]` | `["**/*.md", "docs/**"]` |
 | `ignore.emojis` | Specific emojis to whitelist (never lint) | `[]` | `["✅", "🚀", "⚠️"]` |
 | `output.format` | Output format for CLI | `"table"` | `"json"` |
+
+### Pattern Examples
+
+- `.git/**` - Ignores all files under .git directory
+- `**/node_modules/**` - Ignores node_modules anywhere in the project
+- `backend/venv/**` - Ignores Python virtual environment
+- `**/*.md` - Ignores all markdown files
+- `dist/**` - Ignores all files under dist directory
+- `*.log` - Ignores all .log files in the root directory
 
 ### Common Configuration Patterns
 
@@ -313,9 +340,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emily-flambe/emoji-linter@v1
+      - uses: emilycogsdill/emoji-linter@v1.0.2
         with:
-          mode: forbid
+          mode: check
           comment-pr: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -344,7 +371,7 @@ npm install --save-dev ./path/to/emoji-linter
 
 ### GitHub Action
 ```yaml
-uses: emily-flambe/emoji-linter@v1
+uses: emilycogsdill/emoji-linter@v1.0.2
 ```
 
 ## License
