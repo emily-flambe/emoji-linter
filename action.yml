@@ -27,6 +27,10 @@ inputs:
     description: 'Whether to fail the action when emojis violate the specified mode rules'
     required: false
     default: 'true'
+  show-files:
+    description: 'Whether to print a list of files containing emojis in the action output'
+    required: false
+    default: 'false'
   github-token:
     description: 'GitHub token for posting PR comments'
     required: false

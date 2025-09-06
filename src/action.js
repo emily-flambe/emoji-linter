@@ -19,7 +19,8 @@ async function run() {
       mode: core.getInput('mode') || 'check',
       configFile: core.getInput('config-file') || '.emoji-linter.config.json',
       commentPR: core.getInput('comment-pr') === 'true',
-      failOnError: core.getInput('fail-on-error') === 'true'
+      failOnError: core.getInput('fail-on-error') === 'true',
+      showFiles: core.getInput('show-files') === 'true'
     };
 
     core.info('Emoji Linter GitHub Action starting...');
@@ -27,6 +28,7 @@ async function run() {
     core.info(`Scanning path: ${inputs.path}`);
     core.info(`Using config: ${inputs.configFile}`);
     core.info(`Mode: ${inputs.mode}`);
+    core.info(`Show files: ${inputs.showFiles}`);
 
     // Validate inputs
     try {
@@ -69,6 +71,19 @@ async function run() {
     // Log summary
     core.info(`Scanned ${results.summary.totalFiles} files`);
     core.info(`Found ${results.summary.totalEmojis} emojis in ${results.summary.filesWithEmojis} files`);
+    
+    // Show files with emojis if requested
+    if (inputs.showFiles && results.summary.filesWithEmojis > 0) {
+      core.info('');
+      core.info('Files containing emojis:');
+      const filesWithEmojis = results.results.filter(result => 
+        result.emojis && result.emojis.length > 0
+      );
+      filesWithEmojis.forEach(file => {
+        core.info(`  ${file.filePath} (${file.emojis.length} emoji${file.emojis.length > 1 ? 's' : ''})`);
+      });
+      core.info('');
+    }
 
     // Post PR comment if requested and applicable
     if (inputs.commentPR && GitHubUtils.isPullRequest(github.context)) {
