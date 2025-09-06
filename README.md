@@ -2,6 +2,20 @@
 
 Remove emojis from your codebase. Keep your code professional.
 
+## Important: Two Different Tools
+
+This repository provides **two separate tools**:
+
+1. **CLI Tool** (`emoji-linter`) - A command-line tool for local development
+   - Install with `npm link` after cloning
+   - Run with commands like `emoji-linter check src/`
+   - Located in `bin/emoji-linter.js` and `src/cli.js`
+
+2. **GitHub Action** - For CI/CD pipelines
+   - Use in workflows with `uses: emilycogsdill/emoji-linter@v1.0.2`
+   - Built distribution in `dist/index.js`
+   - **Cannot be run as a CLI tool**
+
 ## How It Works
 
 The emoji-linter scans your codebase for basic Unicode emojis and can either report or remove them.
@@ -57,9 +71,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emily-flambe/emoji-linter@v1
+      - uses: emilycogsdill/emoji-linter@v1.0.2
         with:
-          mode: clean
+          mode: check
 ```
 
 ## CLI Commands
@@ -84,21 +98,21 @@ jobs:
 
 ## GitHub Action Modes
 
-### Clean Mode (Default)
-Detects emojis in your codebase for cleanup:
+### Check Mode (Default)
+Detects and reports emojis in your codebase:
 ```yaml
-- uses: emily-flambe/emoji-linter@v1
+- uses: emilycogsdill/emoji-linter@v1.0.2
   with:
-    mode: clean
+    mode: check
     path: src/
 ```
 
-### Forbid Mode
-Fails if any emojis are found:
+### Fix Mode
+Automatically removes emojis from your codebase:
 ```yaml
-- uses: emily-flambe/emoji-linter@v1
+- uses: emilycogsdill/emoji-linter@v1.0.2
   with:
-    mode: forbid
+    mode: fix
 ```
 
 
@@ -106,7 +120,7 @@ Fails if any emojis are found:
 
 | Input | Description | Default |
 |-------|-------------|---------|
-| `mode` | clean or forbid | `clean` |
+| `mode` | check or fix | `check` |
 | `path` | Directory to scan | `.` |
 | `config-file` | Config file path | `.emoji-linter.config.json` |
 | `comment-pr` | Post results to PR | `false` |
@@ -313,9 +327,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emily-flambe/emoji-linter@v1
+      - uses: emilycogsdill/emoji-linter@v1.0.2
         with:
-          mode: forbid
+          mode: check
           comment-pr: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -344,7 +358,7 @@ npm install --save-dev ./path/to/emoji-linter
 
 ### GitHub Action
 ```yaml
-uses: emily-flambe/emoji-linter@v1
+uses: emilycogsdill/emoji-linter@v1.0.2
 ```
 
 ## License

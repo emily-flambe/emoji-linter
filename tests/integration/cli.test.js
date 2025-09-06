@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const { CLI } = require('../../src/cli');
-const { ValidationError } = require('../src/utils/errors');
+const { ValidationError } = require('../../src/utils/errors');
 const detector = require('../../src/core/detector');
 
 // Mock the detector module

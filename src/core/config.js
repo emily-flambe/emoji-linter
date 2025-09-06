@@ -4,6 +4,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { minimatch } = require('minimatch');
 
 const DEFAULT_CONFIG = {
   ignore: {
@@ -59,19 +60,16 @@ class Config {
   /**
    * Check if file should be ignored
    * @param {string} filePath - File path to check
+   * @param {string} [content] - File content (unused, for CLI compatibility)
    * @returns {boolean} True if file should be ignored
    */
-  shouldIgnoreFile(filePath) {
+  shouldIgnoreFile(filePath, content) {
     const patterns = this.config.ignore?.files || [];
     const normalized = filePath.replace(/\\/g, '/');
     
     return patterns.some(pattern => {
-      const regex = pattern
-        .replace(/\*\*/g, '.*')
-        .replace(/\*/g, '[^/]*')
-        .replace(/\./g, '\\.');
-      
-      return new RegExp(regex).test(normalized);
+      // Use minimatch for proper glob pattern matching
+      return minimatch(normalized, pattern, { matchBase: false });
     });
   }
 

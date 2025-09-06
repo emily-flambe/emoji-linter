@@ -1,6 +1,6 @@
 {
   "name": "emoji-linter",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "CLI tool and GitHub Action for detecting and removing basic Unicode emojis from source code",
   "main": "src/index.js",
   "bin": {
@@ -16,7 +16,8 @@
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.10.1",
-    "@actions/github": "^6.0.0"
+    "@actions/github": "^6.0.0",
+    "minimatch": "^9.0.3"
   },
   "devDependencies": {
     "@vercel/ncc": "^0.38.1",
