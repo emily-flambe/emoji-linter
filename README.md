@@ -42,6 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: emily-flambe/emoji-linter@main
+        # - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
         with:
           mode: check
 ```
@@ -123,11 +124,13 @@ emoji-linter fix --verbose .
 Basic check:
 ```yaml
 - uses: emily-flambe/emoji-linter@main
+# - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
 ```
 
 Check specific directory:
 ```yaml
 - uses: emily-flambe/emoji-linter@main
+# - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
   with:
     path: src/
 ```
@@ -135,6 +138,7 @@ Check specific directory:
 Fix mode (for automated cleanup):
 ```yaml
 - uses: emily-flambe/emoji-linter@main
+# - uses: emily-flambe/emoji-linter@v1.0.3  # Or use specific version
   with:
     mode: fix
 ```
