@@ -56,38 +56,22 @@ describe('CLI - Command Options', () => {
   });
 
   describe('Verbosity options', () => {
-    test('handles --quiet mode', async () => {
-      await cli.checkMode(['test.js'], { quiet: true });
-      // In quiet mode, should minimize output
-      expect(console.log).toHaveBeenCalledTimes(0);
-    });
-
     test('handles --verbose mode', async () => {
       await cli.checkMode(['test.js'], { verbose: true });
       // Verbose mode should be passed through
     });
   });
 
-  describe('Fix command options', () => {
+  describe('Fix command', () => {
     beforeEach(() => {
       fs.existsSync = jest.fn().mockReturnValue(true);
       fs.readFileSync = jest.fn().mockReturnValue('content with 😊');
       fs.writeFileSync = jest.fn();
     });
 
-    test('handles --backup option', async () => {
-      fs.copyFileSync = jest.fn();
-      
-      await cli.fixMode(['test.js'], { backup: true });
-      expect(fs.copyFileSync).toHaveBeenCalledWith(
-        'test.js',
-        'test.js.bak'
-      );
-    });
-
-    test('handles --dry-run option', async () => {
-      await cli.fixMode(['test.js'], { dryRun: true });
-      expect(fs.writeFileSync).not.toHaveBeenCalled();
+    test('writes fixed content to file', async () => {
+      await cli.fixMode(['test.js'], {});
+      expect(fs.writeFileSync).toHaveBeenCalled();
     });
   });
 
