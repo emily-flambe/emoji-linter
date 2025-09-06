@@ -31021,6 +31021,7 @@ async function run() {
     };
 
     core.info('Emoji Linter GitHub Action starting...');
+    core.info(`Current working directory: ${process.cwd()}`);
     core.info(`Scanning path: ${inputs.path}`);
     core.info(`Using config: ${inputs.configFile}`);
     core.info(`Mode: ${inputs.mode}`);
@@ -31033,14 +31034,14 @@ async function run() {
       return;
     }
 
-    // Create CLI instance and execute scan
-    const cli = new CLI();
+    // Create CLI instance with the config file path
+    core.info(`Creating CLI with config file: ${inputs.configFile}`);
+    const cli = new CLI(inputs.configFile);
     let results;
 
     try {
       // Mode directly maps to CLI command: 'check' or 'fix'
       results = await cli.runAndGetResults([inputs.mode, inputs.path], {
-        config: inputs.configFile,
         format: 'json',
         quiet: true
       });
@@ -32304,6 +32305,10 @@ const DEFAULT_CONFIG = {
  */
 class Config {
   constructor(configPath) {
+    if (process.env.DEBUG_IGNORE || process.env.DEBUG_CONFIG) {
+      console.log('=== Config Constructor ===');
+      console.log('Config path passed to constructor:', configPath);
+    }
     this.config = this.loadConfig(configPath);
     // Initialize the ignore instance with patterns
     this.ig = ignore();
@@ -32321,25 +32326,40 @@ class Config {
    * @returns {Object} Configuration object
    */
   loadConfig(configPath) {
+    // Always resolve config from current working directory
     if (!configPath) {
-      configPath = __nccwpck_require__.ab + ".emoji-linter.config.json";
+      configPath = '.emoji-linter.config.json';
+    }
+    
+    // Special handling for relative paths to avoid ncc bundling issues
+    let resolvedPath;
+    if (path.isAbsolute(configPath)) {
+      resolvedPath = configPath;
+    } else {
+      // Use path.join instead of path.resolve to avoid ncc issues
+      resolvedPath = path.join(process.cwd(), configPath);
     }
 
     if (process.env.DEBUG_IGNORE || process.env.DEBUG_CONFIG) {
-      console.log('Looking for config at:', __nccwpck_require__.ab + ".emoji-linter.config.json");
+      console.log('=== Config Resolution Debug ===');
+      console.log('Config path passed to loadConfig:', configPath);
+      console.log('Current working directory:', process.cwd());
+      console.log('Resolved config path:', resolvedPath);
     }
 
-    if (!fs.existsSync(__nccwpck_require__.ab + ".emoji-linter.config.json")) {
+    if (!fs.existsSync(resolvedPath)) {
       if (process.env.DEBUG_CONFIG || process.env.DEBUG_IGNORE) {
-        console.log('Config file not found:', __nccwpck_require__.ab + ".emoji-linter.config.json");
+        console.log('Config file not found:', resolvedPath);
       }
       return DEFAULT_CONFIG;
     }
+    
+    configPath = resolvedPath;
 
     try {
-      const userConfig = JSON.parse(fs.readFileSync(__nccwpck_require__.ab + ".emoji-linter.config.json", 'utf8'));
+      const userConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (process.env.DEBUG_CONFIG || process.env.DEBUG_IGNORE) {
-        console.log('Loaded config from:', __nccwpck_require__.ab + ".emoji-linter.config.json");
+        console.log('Loaded config from:', configPath);
         console.log('Ignore patterns:', userConfig.ignore?.files?.length || 0);
       }
       return {
@@ -32527,6 +32547,9 @@ const path = __nccwpck_require__(6928);
 class FileScanner {
   constructor(config = null) {
     this.config = config;
+    if (process.env.DEBUG_IGNORE && this.config) {
+      console.log('Scanner initialized with config:', this.config.config.ignore?.files?.length || 0, 'ignore patterns');
+    }
   }
 
   /**
@@ -32591,6 +32614,9 @@ class FileScanner {
           if (stat.isDirectory()) {
             // Check if this directory should be skipped using config
             if (this.config && this.config.shouldIgnoreDirectory(fullPath)) {
+              if (process.env.DEBUG_IGNORE) {
+                console.log(`Skipping directory: ${fullPath}`);
+              }
               continue;
             }
             

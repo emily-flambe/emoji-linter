@@ -23,6 +23,7 @@ async function run() {
     };
 
     core.info('Emoji Linter GitHub Action starting...');
+    core.info(`Current working directory: ${process.cwd()}`);
     core.info(`Scanning path: ${inputs.path}`);
     core.info(`Using config: ${inputs.configFile}`);
     core.info(`Mode: ${inputs.mode}`);
@@ -35,14 +36,14 @@ async function run() {
       return;
     }
 
-    // Create CLI instance and execute scan
-    const cli = new CLI();
+    // Create CLI instance with the config file path
+    core.info(`Creating CLI with config file: ${inputs.configFile}`);
+    const cli = new CLI(inputs.configFile);
     let results;
 
     try {
       // Mode directly maps to CLI command: 'check' or 'fix'
       results = await cli.runAndGetResults([inputs.mode, inputs.path], {
-        config: inputs.configFile,
         format: 'json',
         quiet: true
       });

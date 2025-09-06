@@ -11,6 +11,9 @@ const path = require('path');
 class FileScanner {
   constructor(config = null) {
     this.config = config;
+    if (process.env.DEBUG_IGNORE && this.config) {
+      console.log('Scanner initialized with config:', this.config.config.ignore?.files?.length || 0, 'ignore patterns');
+    }
   }
 
   /**
@@ -75,6 +78,9 @@ class FileScanner {
           if (stat.isDirectory()) {
             // Check if this directory should be skipped using config
             if (this.config && this.config.shouldIgnoreDirectory(fullPath)) {
+              if (process.env.DEBUG_IGNORE) {
+                console.log(`Skipping directory: ${fullPath}`);
+              }
               continue;
             }
             
