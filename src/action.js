@@ -40,7 +40,7 @@ async function run() {
     let results;
 
     try {
-      results = await cli.runAndGetResults([inputs.mode, inputs.path], {
+      results = await cli.runAndGetResults(['check', inputs.path], {
         config: inputs.configFile,
         format: 'json',
         quiet: true
