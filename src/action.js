@@ -97,7 +97,12 @@ async function run() {
       core.setFailed(failureMessage);
       return;
     }
-    // Note: 'fix' mode never fails - it just removes emojis
+    
+    // For 'fix' mode, check if the operation actually succeeded
+    if (inputs.mode === 'fix' && !results.success) {
+      core.setFailed(`Failed to fix emojis: ${results.error || 'Unknown error'}`);
+      return;
+    }
 
     // Log success message
     switch (inputs.mode) {
@@ -109,8 +114,10 @@ async function run() {
       }
       break;
     case 'fix':
-      if (hasEmojis) {
-        core.info(`Removed ${results.summary.totalEmojis} emojis from ${results.summary.filesWithEmojis} files`);
+      if (results.summary && results.summary.fixedFiles > 0) {
+        core.info(`Fixed ${results.summary.fixedFiles} files, removed ${results.summary.totalEmojis} emojis`);
+      } else if (hasEmojis) {
+        core.warning(`Found ${results.summary.totalEmojis} emojis but no files were modified`);
       } else {
         core.info('No emojis found to remove');
       }
