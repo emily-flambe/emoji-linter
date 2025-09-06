@@ -34,8 +34,7 @@ async function run() {
     try {
       // Run CLI in JSON format for structured output
       results = await cli.runAndGetResults([inputs.mode, inputs.path], {
-        format: 'json',
-        quiet: true
+        format: 'json'
       });
     } catch (cliError) {
       core.setFailed(`Action failed: ${cliError.message}`);
@@ -75,8 +74,10 @@ async function run() {
       }
       break;
     case 'fix':
-      if (hasEmojis) {
-        core.info(`Would remove ${results.summary.totalEmojis} emojis from ${results.summary.filesWithEmojis} files`);
+      if (results.summary.filesFixed && results.summary.filesFixed > 0) {
+        core.info(`Removed ${results.summary.emojisRemoved} emojis from ${results.summary.filesFixed} files`);
+      } else if (hasEmojis) {
+        core.warning(`Found ${results.summary.totalEmojis} emojis but no files were modified`);
       } else {
         core.info('No emojis found to remove');
       }

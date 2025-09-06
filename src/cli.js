@@ -714,15 +714,112 @@ Exit Codes:
   }
 
   /**
-   * Fix mode results - placeholder for future implementation
+   * Fix mode results - collect results without console output
    * @param {Array} files - Files to fix
-   * @param {Object} options - Command options
+   * @param {Object} _options - Command options (unused)
    * @returns {Promise<Object>} Results with files array and summary
    */
-  async fixModeResults(files, options) {
-    // For GitHub Action, we'll use check mode logic
-    // Fix mode can be enhanced later for specific use cases
-    return await this.checkModeResults(files, options);
+  async fixModeResults(files, _options) { // eslint-disable-line no-unused-vars
+    const results = [];
+    const summary = {
+      totalFiles: 0,
+      filesWithEmojis: 0,
+      totalEmojis: 0,
+      emojiTypes: {},
+      errors: [],
+      filesFixed: 0,
+      emojisRemoved: 0
+    };
+
+    try {
+      // Expand directory paths into individual file paths
+      const expandedFiles = await this.expandPaths(files);
+      
+      // Process files
+      for await (const scanResult of this.scanner.scanFiles(expandedFiles)) {
+        summary.totalFiles++;
+
+        if (scanResult.error) {
+          summary.errors.push({
+            filePath: scanResult.filePath,
+            error: scanResult.error.message
+          });
+          continue;
+        }
+
+        // Skip binary files
+        if (!scanResult.isTextFile) {
+          continue;
+        }
+
+        // Skip files based on configuration ignore patterns
+        if (this.config.shouldIgnoreFile(scanResult.filePath, scanResult.content)) {
+          continue;
+        }
+
+        // Detect and fix emojis
+        try {
+          const emojis = findEmojis(scanResult.content);
+          
+          // Filter out ignored emojis and lines
+          const filteredEmojis = emojis.filter(emoji => {
+            // Check if emoji should be ignored
+            if (this.config.shouldIgnoreEmoji(emoji.emoji)) {
+              return false;
+            }
+
+            // Check if line should be ignored
+            const lines = scanResult.content.split('\n');
+            const line = lines[emoji.lineNumber - 1];
+            if (line && this.config.shouldIgnoreLine(line)) {
+              return false;
+            }
+
+            return true;
+          });
+
+          // Update summary
+          if (filteredEmojis.length > 0) {
+            summary.filesWithEmojis++;
+            summary.totalEmojis += filteredEmojis.length;
+
+            // Count emoji types
+            for (const emoji of filteredEmojis) {
+              summary.emojiTypes[emoji.type] = (summary.emojiTypes[emoji.type] || 0) + 1;
+            }
+
+            // Fix the file
+            const fixedContent = removeEmojis(scanResult.content);
+            fs.writeFileSync(scanResult.filePath, fixedContent, 'utf8');
+            
+            summary.filesFixed++;
+            summary.emojisRemoved += filteredEmojis.length;
+          }
+
+          results.push({
+            filePath: scanResult.filePath,
+            emojis: filteredEmojis,
+            size: scanResult.size,
+            isComplete: scanResult.isComplete
+          });
+
+        } catch (error) {
+          const processingError = new Error(
+            `Failed to process emojis: ${error.message}`,
+            scanResult.filePath
+          );
+          summary.errors.push({
+            filePath: scanResult.filePath,
+            error: processingError.message
+          });
+        }
+      }
+
+      return { files: results, summary };
+
+    } catch (error) {
+      throw new Error(`Fix mode failed: ${error.message}`);
+    }
   }
 }
 
