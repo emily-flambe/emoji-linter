@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: emily-flambe/emoji-linter@v1.0.2
+      - uses: emily-flambe/emoji-linter@main
         with:
           mode: check
 ```
@@ -122,19 +122,19 @@ emoji-linter fix --verbose .
 
 Basic check:
 ```yaml
-- uses: emily-flambe/emoji-linter@v1.0.2
+- uses: emily-flambe/emoji-linter@main
 ```
 
 Check specific directory:
 ```yaml
-- uses: emily-flambe/emoji-linter@v1.0.2
+- uses: emily-flambe/emoji-linter@main
   with:
     path: src/
 ```
 
 Fix mode (for automated cleanup):
 ```yaml
-- uses: emily-flambe/emoji-linter@v1.0.2
+- uses: emily-flambe/emoji-linter@main
   with:
     mode: fix
 ```
