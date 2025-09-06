@@ -2,6 +2,8 @@
 
 Remove emojis from your codebase. Keep your code professional.
 
+**Version 1.0.2** - Fixed ignore patterns and GitHub Action modes
+
 ## Important: Two Different Tools
 
 This repository provides **two separate tools**:
@@ -94,7 +96,7 @@ jobs:
 - `--staged` - Check only git staged files (check mode)
 - `--config <path>` - Custom config file
 - `--quiet` - Minimal output
-- `--verbose` - Detailed output
+- `--verbose` - Detailed output (shows which files are being ignored)
 
 ## GitHub Action Modes
 
@@ -176,6 +178,15 @@ Create `.emoji-linter.config.json` in your project root to customize behavior. T
 | `ignore.files` | File/directory patterns to skip (glob patterns) | `[]` | `["**/*.md", "docs/**"]` |
 | `ignore.emojis` | Specific emojis to whitelist (never lint) | `[]` | `["✅", "🚀", "⚠️"]` |
 | `output.format` | Output format for CLI | `"table"` | `"json"` |
+
+### Pattern Examples
+
+- `.git/**` - Ignores all files under .git directory
+- `**/node_modules/**` - Ignores node_modules anywhere in the project
+- `backend/venv/**` - Ignores Python virtual environment
+- `**/*.md` - Ignores all markdown files
+- `dist/**` - Ignores all files under dist directory
+- `*.log` - Ignores all .log files in the root directory
 
 ### Common Configuration Patterns
 
