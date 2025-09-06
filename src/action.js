@@ -40,7 +40,15 @@ async function run() {
     let results;
 
     try {
-      results = await cli.runAndGetResults(['check', inputs.path], {
+      // Map GitHub Action modes to CLI commands
+      const modeToCommand = {
+        'clean': 'check',
+        'forbid': 'check'
+        // Future modes could map to 'fix', 'diff', etc.
+      };
+      
+      const cliCommand = modeToCommand[inputs.mode] || 'check';
+      results = await cli.runAndGetResults([cliCommand, inputs.path], {
         config: inputs.configFile,
         format: 'json',
         quiet: true
