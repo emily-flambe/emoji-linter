@@ -1,5 +1,5 @@
 name: 'Emoji Linter'
-description: 'GitHub Action to detect and optionally remove emojis from your codebase'
+description: 'Detect and remove emojis from your code. Keep your codebase clean and professional.'
 author: 'Emily Cogsdill'
 
 branding:
